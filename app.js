@@ -203,7 +203,7 @@ io.on('connection', (socket) => {
                         io.in(roomId).emit("room_state", room);
                         checkReadyStatus(roomId);
                     } else {
-                        room.dealer = room.users[0].id;
+                        //room.dealer = room.users[0].id;
                         reset(roomId);
                     }
                 }
