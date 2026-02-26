@@ -39,7 +39,7 @@
         padding: 0;
         display: flex;
         flex-direction: column;
-        align-roomData.items: center;
+        align-items: center;
         min-height: 100vh;
         max-width: 37.5rem;
         margin: auto;
@@ -159,7 +159,7 @@
       #login-screen {
         height: 100vh;
         display: flex;
-        align-roomData.items: center;
+        align-items: center;
         justify-content: center;
       }
 
@@ -205,7 +205,7 @@
         cursor: default;
         display: flex;
         flex-direction: column;
-        align-roomData.items: center;
+        align-items: center;
         justify-content: center;
         border: 0.2rem solid transparent;
         transition: 0.3s;
@@ -252,7 +252,7 @@
         display: flex;
         gap: 0.5rem;
         flex-direction: column;
-        align-roomData.items: center;
+        align-items: center;
       }
 
       .input-bet {
@@ -302,7 +302,7 @@
       .user-row {
         display: flex;
         justify-content: space-between;
-        align-roomData.items: center;
+        align-items: center;
         padding: 1rem 0;
         border-bottom: 0.063rem solid rgba(255, 255, 255, 0.05);
       }
@@ -327,7 +327,7 @@
         padding: 1.5rem;
         background: rgba(0, 0, 0, 0.85);
         z-index: 2000;
-        align-roomData.items: center;
+        align-items: center;
         justify-content: center;
         backdrop-filter: blur(0.5rem);
       }
@@ -352,7 +352,7 @@
         background: rgb(var(--primary));
         border-radius: 50%;
         display: none;
-        align-roomData.items: center;
+        align-items: center;
         justify-content: center;
         cursor: pointer;
         z-index: 1001;
@@ -362,7 +362,7 @@
       .dice-board {
         display: flex;
         flex-direction: column;
-        align-roomData.items: center;
+        align-items: center;
         gap: 2rem;
         margin-bottom: 4rem;
       }
@@ -399,7 +399,7 @@
         border: 0.1rem solid #ccc;
         border-radius: 0.6rem;
         display: flex;
-        align-roomData.items: center;
+        align-items: center;
         justify-content: center;
         backface-visibility: hidden;
         font-size: 3rem;
@@ -438,7 +438,7 @@
         position: fixed;
         inset: 0;
         display: none;
-        align-roomData.items: center;
+        align-items: center;
         justify-content: center;
         z-index: 9999;
         background: rgba(0, 0, 0, 0.6);
@@ -578,8 +578,7 @@
         <div class="title-medium" id="modal-title"></div>
         <div id="user-list-content"></div>
         <button
-          class="btn btn-secondary"
-          style="width: 100%; margin-top: 1.5rem"
+          class="btn btn-secondary btn-close-modal"
           onclick="toggleModal()"
         >
           ĐÓNG
@@ -624,6 +623,7 @@
       ];
       const drawBtn = document.getElementById("draw-btn");
       const dices = document.querySelectorAll(".dice");
+      const modal = document.getElementById("user-modal");
 
       dices.forEach((dice) => {
         let html = "";
@@ -751,7 +751,6 @@
         if (roomData) {
           roomData.items = items;
           renderBauCua();
-          const modal = document.getElementById("user-modal");
           if (modal.style.display === "flex" && modal.dataset.viewingBet) {
             showBetDetails(modal.dataset.viewingBet);
           }
@@ -767,9 +766,7 @@
       }
 
       function renderItem(item) {
-        const betData =
-          roomData && roomData.allBets ? roomData.allBets[item.id] : null;
-        const count = betData ? Object.keys(betData).length : 0;
+        const count = item.allBets ? item.allBets.length : 0;
         const displayVal = formatMoney(myBets[item.id]);
         const imgUrl = `./assets/${item.id}.png`;
 
@@ -845,33 +842,32 @@
 
       function showBetDetails(id) {
         const item = roomData.items.find((x) => x.id === id);
-        const modal = document.getElementById("user-modal");
         const title = document.getElementById("modal-title");
         const content = document.getElementById("user-list-content");
         modal.dataset.viewingBet = id;
         title.innerText = "Ô " + item.name;
 
-        const bets = roomData && roomData.allBets ? roomData.allBets[id] : null;
-        if (!bets || Object.keys(bets).length === 0) {
+        const bets = item.allBets || [];
+        if (bets.length === 0) {
           content.innerHTML =
-            "<p style='text-align:center; padding:2rem; opacity:0.5;'>Trống</p>";
+            "<p class='empty'>Trống</p>";
         } else {
           let html = "";
           let total = 0;
-          for (const sId in bets) {
-            total += bets[sId].amount;
+          bets.forEach(bet => {
+            total += bet.amount;
             html += `
             <div class="user-row">
               <div><span class="${sId === socket.id ? "me" : ""}">${
-              bets[sId].userName
+              bet.userName
             }</span></div>
-              <span style="color:rgb(var(--secondary))">${formatMoney(
-                bets[sId].amount
+              <span class="amount">${formatMoney(
+                bet.amount
               )}</span>
             </div>`;
-          }
+          });
           content.innerHTML =
-            `<div style="text-align:right; font-size:0.8rem; margin-bottom:10px; color:#888;">Tổng: ${formatMoney(
+            `<div class="total">Tổng: ${formatMoney(
               total
             )}</div>` + html;
         }
@@ -881,7 +877,7 @@
       function renderUserList() {
         const title = document.getElementById("modal-title");
         const container = document.getElementById("user-list-content");
-        document.getElementById("user-modal").dataset.viewingBet = "";
+        modal.dataset.viewingBet = "";
         title.innerHTML = `[${roomData.id}]`;
         container.innerHTML = roomData.users
           .map((u) => {
@@ -904,11 +900,10 @@
       }
 
       function toggleModal() {
-        const m = document.getElementById("user-modal");
-        if (m.style.display === "flex") m.style.display = "none";
+        if (modal.style.display === "flex") modal.style.display = "none";
         else {
           renderUserList();
-          m.style.display = "flex";
+          modal.style.display = "flex";
         }
       }
 
