@@ -22,7 +22,14 @@ const rooms = {};
 const checkReadyStatus = (roomId) => {
     const room = rooms[roomId];
     if (room) {
-        const allReady = room.users.length > 0 ? room.users.every(u => u.isReady) : true;
+        // 1. Lấy danh sách những người chơi (trừ Dealer)
+        const playersOnly = room.users.filter(u => u.id !== room.dealer);
+
+        // 2. Kiểm tra: Nếu không có người chơi nào thì mặc định true, 
+        // nếu có thì tất cả người chơi đó phải Ready.
+        const allReady = playersOnly.length > 0 
+            ? playersOnly.every(u => u.isReady) 
+            : true;
 
         io.to(roomId).emit('update_ready_status', {
             allReady: allReady,
