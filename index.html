@@ -1,776 +1,738 @@
-
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loto Master - Bầu Cua</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    />
-    <style>
-      :root {
-        --primary: 255, 62, 62;
-        --secondary: 255, 193, 7;
-        --bg: #1a1a2e;
-        --dice-size: 6rem;
-        font-size: 100%;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loto Master - Bầu Cua</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary: 255, 62, 62;
+      --secondary: 255, 193, 7;
+      --bg: #1a1a2e;
+      --dice-size: 6rem;
+      font-size: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: "Nunito", sans-serif;
+      background: var(--bg);
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      max-width: 37.5rem;
+      margin: auto;
+    }
+
+    .nav-tabs {
+      display: none;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(0.5rem);
+      border-bottom: 0.063rem solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 1.2rem;
+      border: none;
+      background: none;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-family: inherit;
+      transition: 0.3s;
+    }
+
+    .tab-btn.active {
+      color: rgb(var(--primary));
+      border-bottom: 0.25rem solid rgb(var(--primary));
+      background: rgba(var(--primary), 0.1);
+    }
+
+    .container {
+      width: 100%;
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .container.active {
+      display: block;
+    }
+
+    .header-section {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2rem;
+      border-radius: 2rem;
+      border: 0.125rem solid rgba(255, 255, 255, 0.1);
+      width: 100%;
+    }
+
+    .title-large {
+      font-size: 2rem;
+      font-weight: 900;
+      color: rgb(var(--primary));
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .title-medium {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: rgb(var(--primary));
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .btn {
+      font-family: "Nunito", sans-serif;
+      padding: 1rem 2.5rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 3rem;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+    }
+
+    .btn-primary {
+      background: rgb(var(--primary));
+      color: white;
+      box-shadow: 0 0.3125rem 0.9375rem rgba(var(--primary), 0.5);
+    }
+
+    .btn-primary.pressing {
+      transform: scale(0.95);
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #888;
+      border: 0.0625rem solid #444;
+      font-size: 0.9rem;
+    }
+
+    .btn.sm {
+      padding: 0.25rem 0.75rem;
+      font-size: 0.7rem;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .btn-close-modal,
+    .btn-join-room {
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    #login-screen {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      margin: 0;
+    }
+
+    .input-custom {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 1rem;
+      border: none;
+      background: #2a2a40;
+      color: white;
+      text-align: center;
+      font-family: inherit;
+      font-size: 1.1rem;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .color-group {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.7rem;
+      border-radius: 0.7rem;
+      border: 0.063rem solid rgba(255, 255, 255, 0.05);
+    }
+
+    .choice-row {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .card-option {
+      flex: 1;
+      border-radius: 1rem;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 0.2rem solid transparent;
+      transition: 0.3s;
+      background: rgba(var(--opt-bg), 0.6);
+      padding: 0.75rem;
+    }
+
+    .card-option.selected {
+      border-color: white;
+      background: rgb(var(--opt-bg));
+    }
+
+    .card-option img {
+      width: 7rem;
+      height: 7rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .card-option span {
+      font-weight: 900;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    .bet-count {
+      font-size: 0.65rem;
+      opacity: 0.8;
+      margin: 0.5rem 0;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.25rem 0.5rem;
+      border-radius: 1.5rem;
+      cursor: pointer;
+    }
+
+    .bet-input-wrapper {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .input-bet {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: white;
+      text-align: center;
+      font-weight: 900;
+      font-size: 1.1rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .input-bet::placeholder {
+      color: white;
+      opacity: 0.7;
+    }
+
+    .quick-adj-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .btn-adj {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      border-radius: 0.25rem;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.25rem;
+      cursor: pointer;
+    }
+
+    .btn-adj:active {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .card-option.is-locked {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .user-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 0.063rem solid rgba(255, 255, 255, 0.05);
+    }
+
+    .user-row .me {
+      color: rgb(var(--primary));
+      font-weight: bold;
+    }
+
+    .user-row .ready {
+      color: rgb(0, 255, 26);
+    }
+
+    .user-row .not-ready {
+      color: rgb(255, 145, 0);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(0.5rem);
+    }
+
+    .modal-content {
+      background: #2a2a40;
+      padding: 2rem;
+      border-radius: 2rem;
+      width: 100%;
+      max-width: 37.5rem;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 0.125rem solid rgba(255, 255, 255, 0.1);
+    }
+
+    #user-list-btn {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      width: 3.75rem;
+      height: 3.75rem;
+      background: rgb(var(--primary));
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1001;
+      font-size: 1.5rem;
+    }
+
+    .dice-board {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .dice-row {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    .scene {
+      width: var(--dice-size);
+      height: var(--dice-size);
+      perspective: 30rem;
+    }
+
+    .dice {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: translateZ(-2.5rem);
+    }
+
+    .dice.stopping {
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+    }
+
+    .side-wrapper {
+      position: absolute;
+      width: var(--dice-size);
+      height: var(--dice-size);
+      background: #fff;
+      border: 0.1rem solid #ccc;
+      border-radius: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;
+      font-size: 3rem;
+    }
+
+    .side-wrapper img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .s0 {
+      transform: rotateY(0deg) translateZ(2.5rem);
+    }
+
+    .s1 {
+      transform: rotateY(-90deg) translateZ(2.5rem);
+    }
+
+    .s2 {
+      transform: rotateX(90deg) translateZ(2.5rem);
+    }
+
+    .s3 {
+      transform: rotateY(90deg) translateZ(2.5rem);
+    }
+
+    .s4 {
+      transform: rotateX(-90deg) translateZ(2.5rem);
+    }
+
+    .s5 {
+      transform: rotateY(180deg) translateZ(2.5rem);
+    }
+
+    #loader-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(0.5rem);
+    }
+
+    .loader {
+      width: 2.5rem;
+      aspect-ratio: 1;
+      color: rgb(var(--primary));
+      position: relative;
+      background: radial-gradient(0.625rem, currentColor 94%, #0000);
+    }
+
+    .loader:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(0.563rem at bottom right,
+          #0000 94%,
+          currentColor) top left,
+        radial-gradient(0.563rem at bottom left, #0000 94%, currentColor) top right,
+        radial-gradient(0.563rem at top right, #0000 94%, currentColor) bottom left,
+        radial-gradient(0.563rem at top left, #0000 94%, currentColor) bottom right;
+      background-size: 1.25rem 1.25rem;
+      background-repeat: no-repeat;
+      animation: loader 1.5s infinite cubic-bezier(0.3, 1, 0, 1);
+    }
+
+    @keyframes loader {
+      33% {
+        inset: -0.625rem;
+        transform: rotate(0deg);
       }
 
-      * {
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
+      66% {
+        inset: -0.625rem;
+        transform: rotate(90deg);
       }
 
-      body {
-        font-family: "Nunito", sans-serif;
-        background: var(--bg);
-        color: white;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-        max-width: 37.5rem;
-        margin: auto;
-      }
-
-      .nav-tabs {
-        display: none;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.4);
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        backdrop-filter: blur(0.5rem);
-        border-bottom: 0.063rem solid rgba(255, 255, 255, 0.1);
-      }
-
-      .tab-btn {
-        flex: 1;
-        padding: 1.2rem;
-        border: none;
-        background: none;
-        color: #fff;
-        font-weight: 800;
-        cursor: pointer;
-        text-transform: uppercase;
-        font-family: inherit;
-        transition: 0.3s;
-      }
-
-      .tab-btn.active {
-        color: rgb(var(--primary));
-        border-bottom: 0.25rem solid rgb(var(--primary));
-        background: rgba(var(--primary), 0.1);
-      }
-
-      .container {
-        width: 100%;
-        padding: 1.5rem;
-        display: none;
-      }
-
-      .container.active {
-        display: block;
-      }
-
-      .header-section {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 2rem;
-        border-radius: 2rem;
-        border: 0.125rem solid rgba(255, 255, 255, 0.1);
-        width: 100%;
-      }
-
-      .title-large {
-        font-size: 2rem;
-        font-weight: 900;
-        color: rgb(var(--primary));
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-      }
-
-      .title-medium {
-        font-size: 1.5rem;
-        font-weight: 900;
-        color: rgb(var(--primary));
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-      }
-
-      .btn {
-        font-family: "Nunito", sans-serif;
-        padding: 1rem 2.5rem;
-        font-size: 1.25rem;
-        font-weight: 700;
-        border: none;
-        border-radius: 3rem;
-        cursor: pointer;
-        transition: 0.3s;
-        text-transform: uppercase;
-      }
-
-      .btn-primary {
-        background: rgb(var(--primary));
-        color: white;
-        box-shadow: 0 0.3125rem 0.9375rem rgba(var(--primary), 0.5);
-      }
-
-      .btn-primary.pressing {
-        transform: scale(0.95);
-        box-shadow: none;
-      }
-
-      .btn-secondary {
-        background: transparent;
-        color: #888;
-        border: 0.0625rem solid #444;
-        font-size: 0.9rem;
-      }
-
-      .btn.sm {
-        padding: 0.25rem 0.75rem;
-        font-size: 0.7rem;
-      }
-
-      .text-center {
-        text-align: center;
-      }
-
-      .btn-close-modal,
-      .btn-join-room {
-        width: 100%;
-        margin-top: 1.5rem;
-      }
-
-      #login-screen {
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .login-box {
-        margin: 0;
-      }
-
-      .input-custom {
-        width: 100%;
-        padding: 1rem;
-        margin-top: 1rem;
-        border-radius: 1rem;
-        border: none;
-        background: #2a2a40;
-        color: white;
-        text-align: center;
-        font-family: inherit;
-        font-size: 1.1rem;
-      }
-
-      .color-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .color-group {
-        background: rgba(255, 255, 255, 0.03);
-        padding: 0.7rem;
-        border-radius: 0.7rem;
-        border: 0.063rem solid rgba(255, 255, 255, 0.05);
-      }
-
-      .choice-row {
-        display: flex;
-        gap: 1rem;
-      }
-
-      .card-option {
-        flex: 1;
-        border-radius: 1rem;
-        cursor: default;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border: 0.2rem solid transparent;
-        transition: 0.3s;
-        background: rgba(var(--opt-bg), 0.6);
-        padding: 0.75rem;
-      }
-
-      .card-option.selected {
-        border-color: white;
-        background: rgb(var(--opt-bg));
-      }
-
-      .card-option img {
-        width: 7rem;
-        height: 7rem;
-        margin-bottom: 0.5rem;
-        cursor: pointer;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.35);
-      }
-
-      .card-option span {
-        font-weight: 900;
-        font-size: 1rem;
-        color: white;
-        cursor: pointer;
-      }
-
-      .bet-count {
-        font-size: 0.65rem;
-        opacity: 0.8;
-        margin: 0.5rem 0;
-        background: rgba(0, 0, 0, 0.2);
-        padding: 0.25rem 0.5rem;
-        border-radius: 1.5rem;
-        cursor: pointer;
-      }
-
-      .bet-input-wrapper {
-        width: 100%;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 0.5rem;
-        padding: 0.5rem;
-        display: flex;
-        gap: 0.5rem;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .input-bet {
-        width: 100%;
-        background: transparent;
-        border: none;
-        color: white;
-        text-align: center;
-        font-weight: 900;
-        font-size: 1.1rem;
-        font-family: inherit;
-        outline: none;
-      }
-
-      .input-bet::placeholder {
-        color: white;
-        opacity: 0.7;
-      }
-
-      .quick-adj-wrapper {
-        display: flex;
-        gap: 0.5rem;
-        width: 100%;
-      }
-
-      .btn-adj {
-        flex: 1;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        border-radius: 0.25rem;
-        font-size: 0.65rem;
-        font-weight: 800;
-        padding: 0.25rem;
-        cursor: pointer;
-      }
-
-      .btn-adj:active {
-        background: rgba(255, 255, 255, 0.4);
-      }
-
-      .card-option.is-locked {
-        pointer-events: none;
-        opacity: 0.7;
-      }
-
-      .user-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 0;
-        border-bottom: 0.063rem solid rgba(255, 255, 255, 0.05);
-      }
-
-      .user-row .me {
-        color: rgb(var(--primary));
-        font-weight: bold;
-      }
-
-      .user-row .ready {
-        color: rgb(0, 255, 26);
-      }
-
-      .user-row .not-ready {
-        color: rgb(255, 145, 0);
-      }
-
-      .modal {
-        display: none;
-        position: fixed;
+      100% {
         inset: 0;
-        padding: 1.5rem;
-        background: rgba(0, 0, 0, 0.85);
-        z-index: 2000;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(0.5rem);
+        transform: rotate(90deg);
       }
+    }
+  </style>
+</head>
 
-      .modal-content {
-        background: #2a2a40;
-        padding: 2rem;
-        border-radius: 2rem;
-        width: 100%;
-        max-width: 37.5rem;
-        max-height: 80vh;
-        overflow-y: auto;
-        border: 0.125rem solid rgba(255, 255, 255, 0.1);
-      }
-
-      #user-list-btn {
-        position: fixed;
-        bottom: 1.25rem;
-        right: 1.25rem;
-        width: 3.75rem;
-        height: 3.75rem;
-        background: rgb(var(--primary));
-        border-radius: 50%;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 1001;
-        font-size: 1.5rem;
-      }
-
-      .dice-board {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2rem;
-        margin-bottom: 4rem;
-      }
-
-      .dice-row {
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-      }
-
-      .scene {
-        width: var(--dice-size);
-        height: var(--dice-size);
-        perspective: 30rem;
-      }
-
-      .dice {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        transform-style: preserve-3d;
-        transform: translateZ(-2.5rem);
-      }
-
-      .dice.stopping {
-        transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.1);
-      }
-
-      .side-wrapper {
-        position: absolute;
-        width: var(--dice-size);
-        height: var(--dice-size);
-        background: #fff;
-        border: 0.1rem solid #ccc;
-        border-radius: 0.6rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backface-visibility: hidden;
-        font-size: 3rem;
-      }
-
-      .side-wrapper img {
-        width: 100%;
-        height: 100%;
-      }
-
-      .s0 {
-        transform: rotateY(0deg) translateZ(2.5rem);
-      }
-
-      .s1 {
-        transform: rotateY(-90deg) translateZ(2.5rem);
-      }
-
-      .s2 {
-        transform: rotateX(90deg) translateZ(2.5rem);
-      }
-
-      .s3 {
-        transform: rotateY(90deg) translateZ(2.5rem);
-      }
-
-      .s4 {
-        transform: rotateX(-90deg) translateZ(2.5rem);
-      }
-
-      .s5 {
-        transform: rotateY(180deg) translateZ(2.5rem);
-      }
-
-      #loader-overlay {
-        position: fixed;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(0.5rem);
-      }
-
-      .loader {
-        width: 2.5rem;
-        aspect-ratio: 1;
-        color: rgb(var(--primary));
-        position: relative;
-        background: radial-gradient(0.625rem, currentColor 94%, #0000);
-      }
-
-      .loader:before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        background: radial-gradient(
-              0.563rem at bottom right,
-              #0000 94%,
-              currentColor
-            )
-            top left,
-          radial-gradient(0.563rem at bottom left, #0000 94%, currentColor) top
-            right,
-          radial-gradient(0.563rem at top right, #0000 94%, currentColor) bottom
-            left,
-          radial-gradient(0.563rem at top left, #0000 94%, currentColor) bottom
-            right;
-        background-size: 1.25rem 1.25rem;
-        background-repeat: no-repeat;
-        animation: loader 1.5s infinite cubic-bezier(0.3, 1, 0, 1);
-      }
-
-      @keyframes loader {
-        33% {
-          inset: -0.625rem;
-          transform: rotate(0deg);
-        }
-
-        66% {
-          inset: -0.625rem;
-          transform: rotate(90deg);
-        }
-
-        100% {
-          inset: 0;
-          transform: rotate(90deg);
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div id="login-screen" class="container active">
-      <div class="header-section login-box">
-        <div class="title-large">Loto Master</div>
-        <input
-          type="text"
-          id="user-name"
-          placeholder="Tên của bạn"
-          class="input-custom"
-        />
-        <input
-          type="text"
-          id="room-id"
-          placeholder="Mã phòng"
-          class="input-custom"
-        />
-        <input
-          type="password"
-          id="room-pass"
-          placeholder="Mật khẩu phòng"
-          class="input-custom"
-        />
-        <button class="btn btn-primary btn-join-room" onclick="joinGame()">
-          VÀO PHÒNG
-        </button>
-      </div>
+<body>
+  <div id="login-screen" class="container active">
+    <div class="header-section login-box">
+      <div class="title-large">Loto Master</div>
+      <input type="text" id="user-name" placeholder="Tên của bạn" class="input-custom" />
+      <input type="text" id="room-id" placeholder="Mã phòng" class="input-custom" />
+      <input type="password" id="room-pass" placeholder="Mật khẩu phòng" class="input-custom" />
+      <button class="btn btn-primary btn-join-room" onclick="joinGame()">
+        VÀO PHÒNG
+      </button>
     </div>
+  </div>
 
-    <nav class="nav-tabs" id="main-nav">
-      <button
-        class="tab-btn active"
-        id="tab-draw"
-        onclick="switchTab('draw-view')"
-      >
-        Quay số
-      </button>
-      <button class="tab-btn" id="tab-play" onclick="switchTab('play-view')">
-        Bầu Cua
-      </button>
-    </nav>
+  <nav class="nav-tabs" id="main-nav">
+    <button class="tab-btn active" id="tab-draw" onclick="switchTab('draw-view')">
+      Quay số
+    </button>
+    <button class="tab-btn" id="tab-play" onclick="switchTab('play-view')">
+      Bầu Cua
+    </button>
+  </nav>
 
-    <div id="draw-view" class="container">
-      <div class="header-section">
-        <div class="dice-board">
-          <div class="dice-row">
-            <div class="scene">
-              <div id="dice-0" class="dice"></div>
-            </div>
-          </div>
-          <div class="dice-row">
-            <div class="scene">
-              <div id="dice-1" class="dice"></div>
-            </div>
-            <div class="scene">
-              <div id="dice-2" class="dice"></div>
-            </div>
+  <div id="draw-view" class="container">
+    <div class="header-section">
+      <div class="dice-board">
+        <div class="dice-row">
+          <div class="scene">
+            <div id="dice-0" class="dice"></div>
           </div>
         </div>
-        <button class="btn btn-primary" id="draw-btn">QUAY SỐ</button>
+        <div class="dice-row">
+          <div class="scene">
+            <div id="dice-1" class="dice"></div>
+          </div>
+          <div class="scene">
+            <div id="dice-2" class="dice"></div>
+          </div>
+        </div>
       </div>
+      <button class="btn btn-primary" id="draw-btn">QUAY SỐ</button>
     </div>
+  </div>
 
-    <div id="play-view" class="container">
-      <div class="color-grid" id="baucua-grid"></div>
-      <div class="text-center">
-        <button class="btn btn-primary" id="ready-btn" onclick="setReady()">
-          SẴN SÀNG
-        </button>
-      </div>
+  <div id="play-view" class="container">
+    <div class="color-grid" id="baucua-grid"></div>
+    <div class="text-center">
+      <button class="btn btn-primary" id="ready-btn" onclick="setReady()">
+        SẴN SÀNG
+      </button>
     </div>
+  </div>
 
-    <div id="user-list-btn" onclick="toggleModal()">
-      <i class="fa-solid fa-user-group"></i>
+  <div id="user-list-btn" onclick="toggleModal()">
+    <i class="fa-solid fa-user-group"></i>
+  </div>
+
+  <div id="user-modal" class="modal" onclick="if(event.target==this) toggleModal()">
+    <div class="modal-content">
+      <div class="title-medium" id="modal-title"></div>
+      <div id="user-list-content"></div>
+      <button class="btn btn-secondary btn-close-modal" onclick="toggleModal()">
+        ĐÓNG
+      </button>
     </div>
+  </div>
 
-    <div
-      id="user-modal"
-      class="modal"
-      onclick="if(event.target==this) toggleModal()"
-    >
-      <div class="modal-content">
-        <div class="title-medium" id="modal-title"></div>
-        <div id="user-list-content"></div>
-        <button
-          class="btn btn-secondary btn-close-modal"
-          onclick="toggleModal()"
-        >
-          ĐÓNG
-        </button>
-      </div>
-    </div>
+  <div id="loader-overlay">
+    <div class="loader"></div>
+  </div>
 
-    <div id="loader-overlay">
-      <div class="loader"></div>
-    </div>
+  <script>
+    const socket = io("https://loto-be.onrender.com");
+    let myName, myRoomId, roomData;
+    let myBets = {
+      bau: 0,
+      cua: 0,
+      ca: 0,
+      ga: 0,
+      tom: 0,
+      nai: 0,
+    };
+    let isDiceLocked = false;
+    let isLocked = false;
+    let isPressing = false;
 
-    <script>
-      const socket = io("https://loto-be.onrender.com");
-      let myName, myRoomId, roomData;
-      let myBets = {
-        bau: 0,
-        cua: 0,
-        ca: 0,
-        ga: 0,
-        tom: 0,
-        nai: 0,
-      };
-      let isDiceLocked = false;
-      let isLocked = false;
-      let isPressing = false;
+    let startTime = 0;
+    let shakeTimer = null;
+    let rots = [{
+        x: 0,
+        y: 0,
+      },
+      {
+        x: 0,
+        y: 0,
+      },
+      {
+        x: 0,
+        y: 0,
+      },
+    ];
+    const drawBtn = document.getElementById("draw-btn");
+    const dices = document.querySelectorAll(".dice");
+    const modal = document.getElementById("user-modal");
 
-      let startTime = 0;
-      let shakeTimer = null;
-      let rots = [
-        {
-          x: 0,
-          y: 0,
-        },
-        {
-          x: 0,
-          y: 0,
-        },
-        {
-          x: 0,
-          y: 0,
-        },
-      ];
-      const drawBtn = document.getElementById("draw-btn");
-      const dices = document.querySelectorAll(".dice");
-      const modal = document.getElementById("user-modal");
+    dices.forEach((dice) => {
+      let html = "";
+      for (let i = 0; i < roomData.items.length; i++) {
+        const imgUrl = `./assets/${roomData.items[i].id}.png`;
+        html += `<div class="side-wrapper s${i}"><img src="${imgUrl}"></div>`;
+      }
+      dice.innerHTML = html;
+    });
 
-      dices.forEach((dice) => {
-        let html = "";
-        for (let i = 0; i < roomData.items.length; i++) {
-          const imgUrl = `./assets/${roomData.items[i].id}.png`;
-          html += `<div class="side-wrapper s${i}"><img src="${imgUrl}"></div>`;
-        }
-        dice.innerHTML = html;
+    const amIDealer = () => roomData && roomData.dealer === socket.id;
+
+    function formatMoney(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function joinGame() {
+      myName = document.getElementById("user-name").value.trim();
+      myRoomId = document
+        .getElementById("room-id")
+        .value.trim()
+        .toUpperCase();
+      if (!myName || !myRoomId) return alert("Nhập đủ thông tin.");
+      socket.emit("join_room", {
+        roomId: myRoomId,
+        userName: myName,
+        password: document.getElementById("room-pass").value,
       });
+      showLoader();
+    }
 
-      const amIDealer = () => roomData && roomData.dealer === socket.id;
+    socket.on("room_state", (data) => {
+      hideLoader();
+      roomData = data;
 
-      function formatMoney(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      }
-
-      function joinGame() {
-        myName = document.getElementById("user-name").value.trim();
-        myRoomId = document
-          .getElementById("room-id")
-          .value.trim()
-          .toUpperCase();
-        if (!myName || !myRoomId) return alert("Nhập đủ thông tin.");
-        socket.emit("join_room", {
-          roomId: myRoomId,
-          userName: myName,
-          password: document.getElementById("room-pass").value,
-        });
-        showLoader();
-      }
-
-      socket.on("room_state", (data) => {
-        hideLoader();
-        roomData = data;
-
-        const me = data.users.find((u) => u.id === socket.id);
-        if (me) {
-          isLocked = me.isReady;
-          const readyBtn = document.getElementById("ready-btn");
-          if (isLocked) {
-            readyBtn.innerText = "ĐÃ SẴN SÀNG";
-            readyBtn.disabled = true;
-          } else {
-            readyBtn.innerText = "SẴN SÀNG";
-            readyBtn.disabled = false;
-          }
-        }
-
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("main-nav").style.display = "flex";
-        document.getElementById("user-list-btn").style.display = "flex";
-        renderBauCua();
-      });
-
-      drawBtn.addEventListener("pointerdown", handlePress);
-      drawBtn.addEventListener("pointerup", handleRelease);
-      drawBtn.addEventListener("pointercancel", handleRelease);
-
-      function handlePress(e) {
-        if (drawBtn.disabled || isDiceLocked) return;
-        if (e) e.preventDefault();
-        drawBtn.setPointerCapture(e.pointerId);
-        isPressing = true;
-        isDiceLocked = true;
-        startTime = Date.now();
-        drawBtn.classList.add("pressing");
-
-        dices.forEach((d) => d.classList.remove("stopping"));
-
-        if (shakeTimer) clearInterval(shakeTimer);
-        shakeTimer = setInterval(() => {
-          for (let i = 0; i < 3; i++) {
-            rots[i].x += Math.floor(Math.random() * 40) + 30;
-            rots[i].y += Math.floor(Math.random() * 40) + 30;
-            dices[
-              i
-            ].style.transform = `translateZ(-2.5rem) rotateX(${rots[i].x}deg) rotateY(${rots[i].y}deg)`;
-          }
-        }, 16);
-        console.log(123);
-      }
-
-      function handleRelease() {
-        if (!isPressing || drawBtn.disabled) return;
-        isPressing = false;
-
-        const elapsed = Date.now() - startTime;
-        const minTime = 2000;
-
-        if (elapsed < minTime) {
-          setTimeout(stopRolling, minTime - elapsed);
+      const me = data.users.find((u) => u.id === socket.id);
+      if (me) {
+        isLocked = me.isReady;
+        const readyBtn = document.getElementById("ready-btn");
+        if (isLocked) {
+          readyBtn.innerText = "ĐÃ SẴN SÀNG";
+          readyBtn.disabled = true;
         } else {
-          stopRolling();
+          readyBtn.innerText = "SẴN SÀNG";
+          readyBtn.disabled = false;
         }
       }
 
-      function stopRolling() {
-        clearInterval(shakeTimer);
-        drawBtn.classList.remove("pressing");
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("main-nav").style.display = "flex";
+      document.getElementById("user-list-btn").style.display = "flex";
+      renderBauCua();
+    });
 
-        const results = [];
-        dices.forEach((dice, i) => {
-          dice.classList.add("stopping");
-          const val = Math.floor(Math.random() * 6);
-          results.push(val);
+    drawBtn.addEventListener("pointerdown", handlePress);
+    drawBtn.addEventListener("pointerup", handleRelease);
+    drawBtn.addEventListener("pointercancel", handleRelease);
 
-          const targetX =
-            Math.ceil(rots[i].x / 360) * 360 + roomData.items[val].faceAngle.x + 360;
-          const targetY =
-            Math.ceil(rots[i].y / 360) * 360 + roomData.items[val].faceAngle.y + 360;
+    function handlePress(e) {
+      if (drawBtn.disabled || isDiceLocked) return;
+      if (e) e.preventDefault();
+      drawBtn.setPointerCapture(e.pointerId);
+      isPressing = true;
+      isDiceLocked = true;
+      startTime = Date.now();
+      drawBtn.classList.add("pressing");
 
-          dice.style.transform = `translateZ(-2.5rem) rotateX(${targetX}deg) rotateY(${targetY}deg)`;
-          rots[i] = {
-            x: targetX,
-            y: targetY,
-          };
-        });
+      dices.forEach((d) => d.classList.remove("stopping"));
 
-        isDiceLocked = false;
-
-        console.log(results.map((v) => roomData.items[v].name).join(" - "));
-      }
-
-      socket.on("update_items", (items) => {
-        if (roomData) {
-          roomData.items = items;
-          renderBauCua();
-          if (modal.style.display === "flex" && modal.dataset.viewingBet) {
-            showBetDetails(modal.dataset.viewingBet);
-          }
+      if (shakeTimer) clearInterval(shakeTimer);
+      shakeTimer = setInterval(() => {
+        for (let i = 0; i < 3; i++) {
+          rots[i].x += Math.floor(Math.random() * 40) + 30;
+          rots[i].y += Math.floor(Math.random() * 40) + 30;
+          dices[
+            i
+          ].style.transform = `translateZ(-2.5rem) rotateX(${rots[i].x}deg) rotateY(${rots[i].y}deg)`;
         }
+      }, 16);
+      console.log(123);
+    }
+
+    function handleRelease() {
+      if (!isPressing || drawBtn.disabled) return;
+      isPressing = false;
+
+      const elapsed = Date.now() - startTime;
+      const minTime = 2000;
+
+      if (elapsed < minTime) {
+        setTimeout(stopRolling, minTime - elapsed);
+      } else {
+        stopRolling();
+      }
+    }
+
+    function stopRolling() {
+      clearInterval(shakeTimer);
+      drawBtn.classList.remove("pressing");
+
+      const results = [];
+      dices.forEach((dice, i) => {
+        dice.classList.add("stopping");
+        const val = Math.floor(Math.random() * 6);
+        results.push(val);
+
+        const targetX =
+          Math.ceil(rots[i].x / 360) * 360 + roomData.items[val].faceAngle.x + 360;
+        const targetY =
+          Math.ceil(rots[i].y / 360) * 360 + roomData.items[val].faceAngle.y + 360;
+
+        dice.style.transform = `translateZ(-2.5rem) rotateX(${targetX}deg) rotateY(${targetY}deg)`;
+        rots[i] = {
+          x: targetX,
+          y: targetY,
+        };
       });
 
-      function renderBauCua() {
-        const container = document.getElementById("baucua-grid");
-        container.innerHTML = "";
-        for (let i = 0; i < roomData.items.length; i++) {
-          container.innerHTML += renderItem(roomData.items[i]);
+      isDiceLocked = false;
+
+      console.log(results.map((v) => roomData.items[v].name).join(" - "));
+    }
+
+    socket.on("update_items", (items) => {
+      if (roomData) {
+        roomData.items = items;
+        renderBauCua();
+        if (modal.style.display === "flex" && modal.dataset.viewingBet) {
+          showBetDetails(modal.dataset.viewingBet);
         }
       }
+    });
 
-      function renderItem(item) {
-        const count = item.allBets ? item.allBets.length : 0;
-        const displayVal = formatMoney(myBets[item.id]);
-        const imgUrl = `./assets/${item.id}.png`;
+    function renderBauCua() {
+      const container = document.getElementById("baucua-grid");
+      container.innerHTML = "";
+      for (let i = 0; i < roomData.items.length; i++) {
+        container.innerHTML += renderItem(roomData.items[i]);
+      }
+    }
 
-        return `
+    function renderItem(item) {
+      const count = item.allBets ? item.allBets.length : 0;
+      const displayVal = formatMoney(myBets[item.id]);
+      const imgUrl = `./assets/${item.id}.png`;
+
+      return `
         <div class="card-option ${myBets[item.id] > 0 ? "selected" : ""} ${
           isLocked ? "is-locked" : ""
         }" style="--opt-bg: ${item.color}">
@@ -796,67 +758,67 @@
              </div>
           </div>
         </div>`;
-      }
+    }
 
-      function adjBet(id, amount) {
-        if (isLocked) return;
-        let newVal = Math.max(0, myBets[id] + amount);
-        myBets[id] = newVal;
+    function adjBet(id, amount) {
+      if (isLocked) return;
+      let newVal = Math.max(0, myBets[id] + amount);
+      myBets[id] = newVal;
 
-        socket.emit("update_bet", {
+      socket.emit("update_bet", {
+        roomId: myRoomId,
+        animal: id,
+        amount: newVal,
+      });
+      renderBauCua();
+    }
+
+    function handleInputBet(el, id) {
+      if (isLocked) return;
+      let rawVal = el.value.replace(/\D/g, "");
+      let numVal = parseInt(rawVal) || 0;
+      myBets[id] = numVal;
+      el.value = rawVal === "" ? "" : formatMoney(numVal);
+
+      socket.emit("update_bet", {
+        roomId: myRoomId,
+        animal: id,
+        amount: numVal,
+      });
+
+      const card = el.closest(".card-option");
+      if (numVal > 0) card.classList.add("selected");
+      else card.classList.remove("selected");
+    }
+
+    function setReady() {
+      if (isLocked) return;
+      if (confirm("Chốt ô đã đặt và sẵn sàng?")) {
+        socket.emit("bet", {
           roomId: myRoomId,
-          animal: id,
-          amount: newVal,
+          isReady: true,
         });
-        renderBauCua();
+        showLoader();
       }
+    }
 
-      function handleInputBet(el, id) {
-        if (isLocked) return;
-        let rawVal = el.value.replace(/\D/g, "");
-        let numVal = parseInt(rawVal) || 0;
-        myBets[id] = numVal;
-        el.value = rawVal === "" ? "" : formatMoney(numVal);
+    function showBetDetails(id) {
+      const item = roomData.items.find((x) => x.id === id);
+      const title = document.getElementById("modal-title");
+      const content = document.getElementById("user-list-content");
+      modal.dataset.viewingBet = id;
+      title.innerText = "Ô " + item.name;
 
-        socket.emit("update_bet", {
-          roomId: myRoomId,
-          animal: id,
-          amount: numVal,
-        });
-
-        const card = el.closest(".card-option");
-        if (numVal > 0) card.classList.add("selected");
-        else card.classList.remove("selected");
-      }
-
-      function setReady() {
-        if (isLocked) return;
-        if (confirm("Chốt ô đã đặt và sẵn sàng?")) {
-          socket.emit("bet", {
-            roomId: myRoomId,
-            isReady: true,
-          });
-          showLoader();
-        }
-      }
-
-      function showBetDetails(id) {
-        const item = roomData.items.find((x) => x.id === id);
-        const title = document.getElementById("modal-title");
-        const content = document.getElementById("user-list-content");
-        modal.dataset.viewingBet = id;
-        title.innerText = "Ô " + item.name;
-
-        const bets = item.allBets || [];
-        if (bets.length === 0) {
-          content.innerHTML =
-            "<p class='empty'>Trống</p>";
-        } else {
-          let html = "";
-          let total = 0;
-          bets.forEach(bet => {
-            total += bet.amount;
-            html += `
+      const bets = item.allBets || [];
+      if (bets.length === 0) {
+        content.innerHTML =
+          "<p class='empty'>Trống</p>";
+      } else {
+        let html = "";
+        let total = 0;
+        bets.forEach(bet => {
+          total += bet.amount;
+          html += `
             <div class="user-row">
               <div><span class="${sId === socket.id ? "me" : ""}">${
               bet.userName
@@ -865,79 +827,123 @@
                 bet.amount
               )}</span>
             </div>`;
-          });
-          content.innerHTML =
-            `<div class="total">Tổng: ${formatMoney(
+        });
+        content.innerHTML =
+          `<div class="total">Tổng: ${formatMoney(
               total
             )}</div>` + html;
-        }
-        modal.style.display = "flex";
       }
+      modal.style.display = "flex";
+    }
 
-      function renderUserList() {
-        const title = document.getElementById("modal-title");
-        const container = document.getElementById("user-list-content");
-        modal.dataset.viewingBet = "";
-        title.innerHTML = `[${roomData.id}]`;
-        container.innerHTML = roomData.users
-          .map((u) => {
-            const isMe = u.id === socket.id;
-            const isDealer = u.id === roomData.dealer;
-            let icon = isDealer
-              ? '<i class="fa-solid fa-crown ready"></i>'
-              : u.isReady
-              ? '<i class="fa-solid fa-circle-check ready"></i>'
-              : '<i class="fa-solid fa-circle not-ready"></i>';
-            return `<div class="user-row"><div>${icon} <span class="${
+    function renderUserList() {
+      const title = document.getElementById("modal-title");
+      const container = document.getElementById("user-list-content");
+      modal.dataset.viewingBet = "";
+      title.innerHTML = `[${roomData.id}]`;
+      container.innerHTML = roomData.users
+        .map((u) => {
+          const isMe = u.id === socket.id;
+          const isDealer = u.id === roomData.dealer;
+          let icon = isDealer ?
+            '<i class="fa-solid fa-crown ready"></i>' :
+            u.isReady ?
+            '<i class="fa-solid fa-circle-check ready"></i>' :
+            '<i class="fa-solid fa-circle not-ready"></i>';
+          return `<div class="user-row"><div>${icon} <span class="${
               isMe ? "me" : ""
             }">${u.name}</span></div>${
               amIDealer() && !isMe
                 ? `<button class="btn btn-secondary sm" onclick="changeDealer('${u.id}')">GIAO CÁI</button>`
                 : ""
             }</div>`;
-          })
-          .join("");
-      }
+        })
+        .join("");
+    }
 
-      function toggleModal() {
-        if (modal.style.display === "flex") modal.style.display = "none";
-        else {
-          renderUserList();
-          modal.style.display = "flex";
-        }
+    function toggleModal() {
+      if (modal.style.display === "flex") modal.style.display = "none";
+      else {
+        renderUserList();
+        modal.style.display = "flex";
       }
+    }
 
-      function switchTab(id) {
-        document
-          .querySelectorAll(".container")
-          .forEach((c) => c.classList.remove("active"));
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((b) => b.classList.remove("active"));
-        document.getElementById(id).classList.add("active");
-        document
-          .getElementById(id === "draw-view" ? "tab-draw" : "tab-play")
-          .classList.add("active");
-      }
+    function switchTab(id) {
+      document
+        .querySelectorAll(".container")
+        .forEach((c) => c.classList.remove("active"));
+      document
+        .querySelectorAll(".tab-btn")
+        .forEach((b) => b.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      document
+        .getElementById(id === "draw-view" ? "tab-draw" : "tab-play")
+        .classList.add("active");
+    }
 
-      function showLoader() {
-        document.getElementById("loader-overlay").style.display = "flex";
-      }
+    function showLoader() {
+      document.getElementById("loader-overlay").style.display = "flex";
+    }
 
-      function hideLoader() {
-        document.getElementById("loader-overlay").style.display = "none";
-      }
+    function hideLoader() {
+      document.getElementById("loader-overlay").style.display = "none";
+    }
 
-      function changeDealer(id) {
-        if (confirm("Giao Cái?")) {
-          socket.emit("change_dealer", {
-            roomId: myRoomId,
-            targetUserId: id,
-          });
-          showLoader();
-          toggleModal();
-        }
+    function changeDealer(id) {
+      if (confirm("Giao Cái?")) {
+        socket.emit("change_dealer", {
+          roomId: myRoomId,
+          targetUserId: id,
+        });
+        showLoader();
+        toggleModal();
       }
-    </script>
-  </body>
+    }
+
+    socket.on('game_reset', (data) => {
+      hideLoader();
+      roomData = data;
+      renderBauCua();
+      renderUserList();
+
+      alert("Ván mới đã bắt đầu, vui lòng chọn lại tờ dò và bấm sẵn sàng.");
+    });
+
+    socket.on('result', (data) => {
+      hideLoader();
+      roomData = data;
+      renderBauCua();
+      renderUserList();
+
+      alert("Ván mới đã bắt đầu, vui lòng chọn lại tờ dò và bấm sẵn sàng.");
+    });
+
+    function showResult(result) {
+      const title = document.getElementById("modal-title");
+      const content = document.getElementById("user-list-content");
+      title.innerText = "KẾT QUẢ";
+
+      let html = "";
+      Object.keys(result).forEach(userName => {
+        total += result[userName];
+        html += `
+            <div class="user-row">
+              <div><span class="${sId === socket.id ? "me" : ""}">${
+              userName
+            }</span></div>
+              <span class="amount">${formatMoney(
+                result[userName]
+              )}</span>
+            </div>`;
+      });
+      content.innerHTML =
+        `<div class="total">Tổng: ${formatMoney(
+              total
+            )}</div>` + html;
+      modal.style.display = "flex";
+    }
+  </script>
+</body>
+
 </html>
