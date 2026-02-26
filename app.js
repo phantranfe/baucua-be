@@ -29,7 +29,7 @@ const checkReadyStatus = (roomId) => {
         // nếu có thì tất cả người chơi đó phải Ready.
         const allReady = playersOnly.length > 0 
             ? playersOnly.every(u => u.isReady) 
-            : true;
+            : false;
 
         io.to(roomId).emit('update_ready_status', {
             allReady: allReady,
@@ -203,6 +203,7 @@ io.on('connection', (socket) => {
                         io.in(roomId).emit("room_state", room);
                         checkReadyStatus(roomId);
                     } else {
+                        room.dealer = room.users[0].id;
                         reset(roomId);
                     }
                 }
