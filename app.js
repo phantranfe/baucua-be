@@ -196,16 +196,20 @@ io.on('connection', (socket) => {
                 if (room.users.length === 0) {
                     delete rooms[roomId];
                 } else {
-                    // Nếu Dealer thoát, chuyển Dealer cho người tiếp theo
+                    if (room.dealer === socket.id) {
+                        
+                        // Nếu Dealer thoát, chuyển Dealer cho người tiếp theo
                     const notReadyUser = room.users.find((user) => !user.isReady);
                     if (notReadyUser) {
                         room.dealer = notReadyUser.id;
                         io.in(roomId).emit("room_state", room);
                         checkReadyStatus(roomId);
                     } else {
-                        //room.dealer = room.users[0].id;
+                        room.dealer = room.users[0].id;
                         reset(roomId);
                     }
+                    }
+                    
                 }
             }
         }
