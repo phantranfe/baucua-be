@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
                     });
                 }
             });
-            io.in(roomId).emit('update_items', room.items);
+            io.in(roomId).emit('room_state', room);
         } else {
             socket.emit('error_msg', 'Không thể đặt cược lúc này.');
         }
