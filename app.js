@@ -156,26 +156,31 @@ io.on('connection', (socket) => {
 
     socket.on('change_dealer', ({ roomId, targetUserId }) => {
         const room = rooms[roomId];
-        if (room && socket.id === room.dealer) {
-            room.dealer = targetUserId;
-            checkReadyStatus(roomId);
-            io.in(roomId).emit('room_state', room);
+        const user = room.users.find((user) => user.id === targetUserId);
+        if (room && socket.id === room.dealer && user && !user.isReady) {
+          room.dealer = targetUserId;
+          checkReadyStatus(roomId);
+          io.in(roomId).emit("room_state", room);
         }
     });
 
-    socket.on('reset_game', (roomId) => {
-        const room = rooms[roomId];
-        if (room && socket.id === room.dealer) {
-            // Reset toàn bộ trạng thái để sang ván mới
-            room.drawnItems = [];
-            room.users.forEach(u => u.isReady = false);
-            room.items.forEach(item => {
-                item.allBets = []; // Xóa hết cược cũ
-            });
+    function reset(roomId) {
+      const room = rooms[roomId];
+      if (room && socket.id === room.dealer) {
+        // Reset toàn bộ trạng thái để sang ván mới
+        room.drawnItems = [];
+        room.users.forEach((u) => (u.isReady = false));
+        room.items.forEach((item) => {
+          item.allBets = []; // Xóa hết cược cũ
+        });
 
-            io.in(roomId).emit('game_reset', room);
-            checkReadyStatus(roomId);
-        }
+        io.in(roomId).emit("game_reset", room);
+        checkReadyStatus(roomId);
+      }
+    }
+
+    socket.on('reset_game', (roomId) => {
+        reset(roomId);
     });
 
     socket.on('disconnect', () => {
@@ -192,11 +197,14 @@ io.on('connection', (socket) => {
                     delete rooms[roomId];
                 } else {
                     // Nếu Dealer thoát, chuyển Dealer cho người tiếp theo
-                    if (room.dealer === socket.id) {
-                        room.dealer = room.users[0].id;
+                    const notReadyUser = room.users.find((user) => !user.isReady);
+                    if (notReadyUser) {
+                        room.dealer = notReadyUser.id;
+                        io.in(roomId).emit("room_state", room);
+                        checkReadyStatus(roomId);
+                    } else {
+                        reset(roomId);
                     }
-                    io.in(roomId).emit('room_state', room);
-                    checkReadyStatus(roomId);
                 }
             }
         }
