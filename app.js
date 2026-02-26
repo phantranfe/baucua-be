@@ -92,8 +92,8 @@ io.on('connection', (socket) => {
                     });
                 }
             });
-            if (user && socket.id !== room.dealer) {
-                user.isReady = !user.isReady;
+            if (user) {
+                user.isReady = true;
                 checkReadyStatus(roomId);
             }
             io.in(roomId).emit('room_state', room);
