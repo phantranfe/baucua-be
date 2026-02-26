@@ -105,6 +105,9 @@ io.on('connection', (socket) => {
     socket.on('draw_items', ({ roomId, drawnItems }) => {
         const room = rooms[roomId];
         if (!room || socket.id !== room.dealer) return;
+        if (room.drawnItems && room.drawnItems.length > 0) {
+            return socket.emit('error_msg', 'Hãy bấm chơi lại.');
+        }
 
         const players = room.users.filter(u => u.id !== room.dealer);
         const allReady = players.length > 0 ? players.every(u => u.isReady) : true;
