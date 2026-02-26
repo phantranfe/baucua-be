@@ -80,26 +80,17 @@ io.on('connection', (socket) => {
     }) => {
         const room = rooms[roomId];
         if (room && room.drawnItems.length === 0) {
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                const chosenItem = room.items.find(t => t.id === item.id);
-                if (chosenItem) {
-                    if (chosenItem.users) {
-                        chosenItem.users.push({
+            items.forEach(item => {
+                const roomItem = room.items.find(t => t.id === item.id);
+                if (roomItem) {
+                    if (!roomItem.users) roomItem.users = [];
+                        roomItem.users.push({
                             userName,
-                            id: socket.id,
                             amount: item.amount
                         });
-                    } else {
-                        chosenItem.users = [{
-                            userName,
-                            id: socket.id,
-                            amount: item.amount
-                        }];
-                    }
                     io.in(roomId).emit('update_items', room.items);
                 }
-            }
+            });
         } else {
             socket.emit('error_msg', 'Không thể chơi lúc này.');
         }
@@ -119,20 +110,17 @@ io.on('connection', (socket) => {
 
             const result = {};
 
-            for (let i = 0; i < room.items.length; i++) {
-                const roomItem = room.items[i];
-                if (drawnItemIds.includes(roomItem.id)) {
-                    
-                } else {
-                    
-                }
-            }
-
-            // room.drawnItems.push(number);
-            // io.in(roomId).emit('new_number', {
-            //     number: number,
-            //     history: room.drawnItems
-            // });
+            room.items.forEach(roomItem => {
+                roomItem.users.forEach(user => {
+                    if (!result[user.userName]) result[user.userName] = 0;
+                    if (drawnItemIds.includes(roomItem.id)) {
+                        result[user.userName] += user.amount;
+                    } else {
+                        result[user.userName] -= user.amount;
+                    }
+                });
+            });
+            io.in(roomId).emit('result', result);
         }
     });
 
@@ -145,24 +133,6 @@ io.on('connection', (socket) => {
             room.dealer = targetUserId;
             checkReadyStatus(roomId);
             io.in(roomId).emit('room_state', room);
-        }
-    });
-
-    socket.on('ready', (roomId) => {
-        const room = rooms[roomId];
-        if (room) {
-            const user = room.users.find(u => u.id === socket.id);
-            if (user) {
-                user.isReady = true;
-                checkReadyStatus(roomId);
-            }
-        }
-    });
-
-    socket.on('claim_win', ({roomId, userName}) => {
-        const room = rooms[roomId];
-        if (room) {
-            io.to(roomId).emit('win', userName);
         }
     });
 
