@@ -522,7 +522,10 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-primary" id="draw-btn">QUAY SỐ</button>
+      <div class="actions">
+        <button class="btn btn-primary" id="draw-btn" disabled>LẮC</button>
+        <button class="btn btn-secondary" id="reset-btn">CHƠI LẠI</button>
+      </div>
     </div>
   </div>
 
@@ -556,393 +559,304 @@
   <script>
     const socket = io("https://loto-be.onrender.com");
     let myName, myRoomId, roomData;
-    let myBets = {
-      bau: 0,
-      cua: 0,
-      ca: 0,
-      ga: 0,
-      tom: 0,
-      nai: 0,
-    };
+    let myBets = {}; // Lưu trữ cược cục bộ: { bau: 5000, cua: 10000 }
     let isDiceLocked = false;
     let isLocked = false;
     let isPressing = false;
 
     let startTime = 0;
     let shakeTimer = null;
-    let rots = [{
-        x: 0,
-        y: 0,
-      },
-      {
-        x: 0,
-        y: 0,
-      },
-      {
-        x: 0,
-        y: 0,
-      },
-    ];
+    let rots = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
+    
     const drawBtn = document.getElementById("draw-btn");
+    const resetBtn = document.getElementById("reset-btn");
     const dices = document.querySelectorAll(".dice");
     const modal = document.getElementById("user-modal");
-
-    dices.forEach((dice) => {
-      let html = "";
-      for (let i = 0; i < roomData.items.length; i++) {
-        const imgUrl = `./assets/${roomData.items[i].id}.png`;
-        html += `<div class="side-wrapper s${i}"><img src="${imgUrl}"></div>`;
-      }
-      dice.innerHTML = html;
-    });
 
     const amIDealer = () => roomData && roomData.dealer === socket.id;
 
     function formatMoney(num) {
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
 
     function joinGame() {
-      myName = document.getElementById("user-name").value.trim();
-      myRoomId = document
-        .getElementById("room-id")
-        .value.trim()
-        .toUpperCase();
-      if (!myName || !myRoomId) return alert("Nhập đủ thông tin.");
-      socket.emit("join_room", {
-        roomId: myRoomId,
-        userName: myName,
-        password: document.getElementById("room-pass").value,
-      });
-      showLoader();
+        myName = document.getElementById("user-name").value.trim();
+        myRoomId = document.getElementById("room-id").value.trim().toUpperCase();
+        const password = document.getElementById("room-pass").value;
+
+        if (!myName || !myRoomId) return alert("Nhập đủ thông tin.");
+        
+        showLoader();
+        socket.emit("join_room", { roomId: myRoomId, userName: myName, password });
     }
 
+    // Nhận trạng thái phòng từ Server
     socket.on("room_state", (data) => {
-      hideLoader();
-      roomData = data;
+        hideLoader();
+        roomData = data;
+        
+        // Khởi tạo giao diện Xúc xắc nếu là lần đầu
+        initDiceUI();
 
-      const me = data.users.find((u) => u.id === socket.id);
-      if (me) {
-        isLocked = me.isReady;
-        const readyBtn = document.getElementById("ready-btn");
-        if (isLocked) {
-          readyBtn.innerText = "ĐÃ SẴN SÀNG";
-          readyBtn.disabled = true;
-        } else {
-          readyBtn.innerText = "SẴN SÀNG";
-          readyBtn.disabled = false;
+        const me = data.users.find((u) => u.id === socket.id);
+        if (me) {
+            isLocked = me.isReady;
+            const readyBtn = document.getElementById("ready-btn");
+            readyBtn.innerText = isLocked ? "ĐÃ SẴN SÀNG" : "SẴN SÀNG";
+            readyBtn.disabled = isLocked;
         }
-      }
 
-      document.getElementById("login-screen").style.display = "none";
-      document.getElementById("main-nav").style.display = "flex";
-      document.getElementById("user-list-btn").style.display = "flex";
-      renderBauCua();
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("main-nav").style.display = "flex";
+        document.getElementById("user-list-btn").style.display = "flex";
+        // Chỉ hiển thị tab Quay số cho Dealer
+        document.getElementById("tab-draw").style.display = amIDealer() ? "block" : "none";
+        
+        renderBauCua();
     });
 
-    drawBtn.addEventListener("pointerdown", handlePress);
+    function initDiceUI() {
+        dices.forEach((dice) => {
+            if (dice.innerHTML !== "") return;
+            let html = "";
+            roomData.items.forEach((item, i) => {
+                // Giả định bạn có ảnh trong thư mục assets
+                const imgUrl = `./assets/${item.id}.png`;
+                html += `<div class="side-wrapper s${i}"><img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/100?text=${item.name}'"></div>`;
+            });
+            dice.innerHTML = html;
+        });
+    }
+
+    // Xử lý Quay số (Chỉ dành cho Dealer)
+    drawBtn.addEventListener("pointerdown", (e) => {
+        if (!amIDealer() || isDiceLocked) return;
+        handlePress(e);
+    });
     drawBtn.addEventListener("pointerup", handleRelease);
-    drawBtn.addEventListener("pointercancel", handleRelease);
 
     function handlePress(e) {
-      if (drawBtn.disabled || isDiceLocked) return;
-      if (e) e.preventDefault();
-      drawBtn.setPointerCapture(e.pointerId);
-      isPressing = true;
-      isDiceLocked = true;
-      startTime = Date.now();
-      drawBtn.classList.add("pressing");
+        isPressing = true;
+        isDiceLocked = true;
+        startTime = Date.now();
+        drawBtn.classList.add("pressing");
+        dices.forEach((d) => d.classList.remove("stopping"));
 
-      dices.forEach((d) => d.classList.remove("stopping"));
-
-      if (shakeTimer) clearInterval(shakeTimer);
-      shakeTimer = setInterval(() => {
-        for (let i = 0; i < 3; i++) {
-          rots[i].x += Math.floor(Math.random() * 40) + 30;
-          rots[i].y += Math.floor(Math.random() * 40) + 30;
-          dices[
-            i
-          ].style.transform = `translateZ(-2.5rem) rotateX(${rots[i].x}deg) rotateY(${rots[i].y}deg)`;
-        }
-      }, 16);
-      console.log(123);
+        shakeTimer = setInterval(() => {
+            rots.forEach((rot, i) => {
+                rot.x += Math.floor(Math.random() * 40) + 30;
+                rot.y += Math.floor(Math.random() * 40) + 30;
+                dices[i].style.transform = `translateZ(-2.5rem) rotateX(${rot.x}deg) rotateY(${rot.y}deg)`;
+            });
+        }, 16);
     }
 
     function handleRelease() {
-      if (!isPressing || drawBtn.disabled) return;
-      isPressing = false;
-
-      const elapsed = Date.now() - startTime;
-      const minTime = 2000;
-
-      if (elapsed < minTime) {
-        setTimeout(stopRolling, minTime - elapsed);
-      } else {
-        stopRolling();
-      }
+        if (!isPressing) return;
+        isPressing = false;
+        const elapsed = Date.now() - startTime;
+        const wait = Math.max(0, 2000 - elapsed);
+        setTimeout(stopRolling, wait);
     }
 
     function stopRolling() {
-      clearInterval(shakeTimer);
-      drawBtn.classList.remove("pressing");
+        clearInterval(shakeTimer);
+        drawBtn.classList.remove("pressing");
 
-      const results = [];
-      dices.forEach((dice, i) => {
-        dice.classList.add("stopping");
-        const val = Math.floor(Math.random() * 6);
-        results.push(val);
+        // Dealer quyết định kết quả
+        const results = [];
+        const drawnItems = [];
 
-        const targetX =
-          Math.ceil(rots[i].x / 360) * 360 + roomData.items[val].faceAngle.x + 360;
-        const targetY =
-          Math.ceil(rots[i].y / 360) * 360 + roomData.items[val].faceAngle.y + 360;
+        dices.forEach((dice, i) => {
+            dice.classList.add("stopping");
+            const index = Math.floor(Math.random() * 6);
+            const item = roomData.items[index];
+            results.push(index);
+            drawnItems.push(item);
 
-        dice.style.transform = `translateZ(-2.5rem) rotateX(${targetX}deg) rotateY(${targetY}deg)`;
-        rots[i] = {
-          x: targetX,
-          y: targetY,
-        };
-      });
+            // Tính toán góc quay để mặt trúng hướng về người xem
+            // Lưu ý: Cần faceAngle chuẩn trong constants.js
+            const targetX = Math.ceil(rots[i].x / 360) * 360 + (item.faceAngle?.x || 0) + 360;
+            const targetY = Math.ceil(rots[i].y / 360) * 360 + (item.faceAngle?.y || 0) + 360;
 
-      isDiceLocked = false;
+            dice.style.transform = `translateZ(-2.5rem) rotateX(${targetX}deg) rotateY(${targetY}deg)`;
+            rots[i] = { x: targetX, y: targetY };
+        });
 
-      console.log(results.map((v) => roomData.items[v].name).join(" - "));
+        // Gửi kết quả lên server
+        socket.emit("draw_items", { roomId: myRoomId, drawnItems });
+        isDiceLocked = false;
     }
-
-    socket.on("update_items", (items) => {
-      if (roomData) {
-        roomData.items = items;
-        renderBauCua();
-        if (modal.style.display === "flex" && modal.dataset.viewingBet) {
-          showBetDetails(modal.dataset.viewingBet);
-        }
-      }
-    });
 
     function renderBauCua() {
-      const container = document.getElementById("baucua-grid");
-      container.innerHTML = "";
-      for (let i = 0; i < roomData.items.length; i++) {
-        container.innerHTML += renderItem(roomData.items[i]);
-      }
-    }
-
-    function renderItem(item) {
-      const count = item.allBets ? item.allBets.length : 0;
-      const displayVal = formatMoney(myBets[item.id]);
-      const imgUrl = `./assets/${item.id}.png`;
-
-      return `
-        <div class="card-option ${myBets[item.id] > 0 ? "selected" : ""} ${
-          isLocked ? "is-locked" : ""
-        }" style="--opt-bg: ${item.color}">
-          <img src="${imgUrl}" onclick="showBetDetails('${item.id}')">
-          <span onclick="showBetDetails('${item.id}')">${item.name}</span>
-          <div class="bet-count" onclick="showBetDetails('${
-            item.id
-          }')">${count} người đặt</div>
-          <div class="bet-input-wrapper">
-             <input type="text" 
-                    class="input-bet" 
-                    value="${displayVal === "0" ? "" : displayVal}" 
-                    placeholder="0"
-                    ${isLocked ? "disabled" : ""}
-                    oninput="handleInputBet(this, '${item.id}')">
-             <div class="quick-adj-wrapper">
-                <button class="btn-adj" onclick="adjBet('${
-                  item.id
-                }', -5000)">-5.000</button>
-                <button class="btn-adj" onclick="adjBet('${
-                  item.id
-                }', 5000)">+5.000</button>
-             </div>
-          </div>
-        </div>`;
-    }
-
-    function adjBet(id, amount) {
-      if (isLocked) return;
-      let newVal = Math.max(0, myBets[id] + amount);
-      myBets[id] = newVal;
-
-      socket.emit("update_bet", {
-        roomId: myRoomId,
-        animal: id,
-        amount: newVal,
-      });
-      renderBauCua();
+        const container = document.getElementById("baucua-grid");
+        container.innerHTML = roomData.items.map(item => {
+            const myAmount = myBets[item.id] || 0;
+            const count = item.allBets ? item.allBets.length : 0;
+            const imgUrl = `./assets/${item.id}.png`;
+            
+            return `
+                <div class="card-option ${myAmount > 0 ? "selected" : ""} ${isLocked ? "is-locked" : ""}" style="--opt-bg: ${item.color}">
+                    <img src="${imgUrl}" onclick="showBetDetails('${item.id}')" onerror="this.src='https://via.placeholder.com/100?text=${item.name}'">
+                    <span onclick="showBetDetails('${item.id}')">${item.name}</span>
+                    <div class="bet-count" onclick="showBetDetails('${item.id}')">${count} người đặt</div>
+                    <div class="bet-input-wrapper">
+                        <input type="text" class="input-bet" value="${myAmount || ""}" placeholder="0" 
+                               ${isLocked ? "disabled" : ""} oninput="handleInputBet(this, '${item.id}')">
+                        <div class="quick-adj-wrapper">
+                            <button class="btn-adj" onclick="adjBet('${item.id}', -5000)">-5k</button>
+                            <button class="btn-adj" onclick="adjBet('${item.id}', 5000)">+5k</button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join("");
     }
 
     function handleInputBet(el, id) {
-      if (isLocked) return;
-      let rawVal = el.value.replace(/\D/g, "");
-      let numVal = parseInt(rawVal) || 0;
-      myBets[id] = numVal;
-      el.value = rawVal === "" ? "" : formatMoney(numVal);
-
-      socket.emit("update_bet", {
-        roomId: myRoomId,
-        animal: id,
-        amount: numVal,
-      });
-
-      const card = el.closest(".card-option");
-      if (numVal > 0) card.classList.add("selected");
-      else card.classList.remove("selected");
+        let val = parseInt(el.value.replace(/\D/g, "")) || 0;
+        myBets[id] = val;
+        el.value = val === 0 ? "" : formatMoney(val);
+        renderBauCua();
     }
 
+    function adjBet(id, amount) {
+        if (isLocked) return;
+        myBets[id] = Math.max(0, (myBets[id] || 0) + amount);
+        renderBauCua();
+    }
+
+    // Gửi lệnh Sẵn sàng & Danh sách cược lên Server
     function setReady() {
-      if (isLocked) return;
-      if (confirm("Chốt ô đã đặt và sẵn sàng?")) {
-        socket.emit("bet", {
-          roomId: myRoomId,
-          isReady: true,
-        });
+        if (isLocked) return;
+        const betList = [];
+        for (let id in myBets) {
+            if (myBets[id] > 0) betList.push({ id, amount: myBets[id] });
+        }
+
+        // 1. Gửi cược trước
+        socket.emit("bet", { roomId: myRoomId, userName: myName, items: betList });
+        // 2. Gửi trạng thái sẵn sàng
+        socket.emit("toggle_ready", myRoomId);
         showLoader();
-      }
     }
 
-    function showBetDetails(id) {
-      const item = roomData.items.find((x) => x.id === id);
-      const title = document.getElementById("modal-title");
-      const content = document.getElementById("user-list-content");
-      modal.dataset.viewingBet = id;
-      title.innerText = "Ô " + item.name;
+    socket.on("update_ready_status", (data) => {
+        hideLoader();
+        if (roomData) roomData.users = data.users;
+        const me = data.users.find(u => u.id === socket.id);
+        isLocked = me ? me.isReady : false;
+        renderBauCua();
+    });
 
-      const bets = item.allBets || [];
-      if (bets.length === 0) {
-        content.innerHTML =
-          "<p class='empty'>Trống</p>";
-      } else {
+    socket.on("result", (data) => {
+        showResult(data.result);
+    });
+
+    function showResult(result) {
+        const title = document.getElementById("modal-title");
+        const content = document.getElementById("user-list-content");
+        title.innerText = "KẾT QUẢ VÁN ĐẤU";
+
         let html = "";
-        let total = 0;
-        bets.forEach(bet => {
-          total += bet.amount;
-          html += `
-            <div class="user-row">
-              <div><span class="${sId === socket.id ? "me" : ""}">${
-              bet.userName
-            }</span></div>
-              <span class="amount">${formatMoney(
-                bet.amount
-              )}</span>
-            </div>`;
-        });
-        content.innerHTML =
-          `<div class="total">Tổng: ${formatMoney(
-              total
-            )}</div>` + html;
-      }
-      modal.style.display = "flex";
+        for (let user in result) {
+            const val = result[user];
+            const color = val >= 0 ? "#00ff1a" : "#ff3e3e";
+            html += `
+                <div class="user-row">
+                    <span class="${user === myName ? "me" : ""}">${user}</span>
+                    <span style="color: ${color}; font-weight: bold">${val > 0 ? "+" : ""}${formatMoney(val)}</span>
+                </div>`;
+        }
+
+        content.innerHTML = html;
+        modal.style.display = "flex";
+    }
+
+    resetBtn.onclick = () => {
+      if (confirm("Chơi ván mới?")) {
+        socket.emit('reset_game', myRoomId);
+        showLoader();
+      };
+    };
+
+    socket.on("game_reset", (data) => {
+        roomData = data;
+        myBets = {};
+        isLocked = false;
+        modal.style.display = "none";
+        renderBauCua();
+        alert("Bắt đầu ván mới!");
+    });
+
+    socket.on("join_error", (msg) => { hideLoader(); alert(msg); });
+    socket.on("error_msg", (msg) => alert(msg));
+
+    function toggleModal() {
+        if (modal.style.display === "flex") {
+            modal.style.display = "none";
+        } else {
+            renderUserList();
+            modal.style.display = "flex";
+        }
     }
 
     function renderUserList() {
       const title = document.getElementById("modal-title");
       const container = document.getElementById("user-list-content");
-      modal.dataset.viewingBet = "";
       title.innerHTML = `[${roomData.id}]`;
-      container.innerHTML = roomData.users
-        .map((u) => {
-          const isMe = u.id === socket.id;
-          const isDealer = u.id === roomData.dealer;
-          let icon = isDealer ?
-            '<i class="fa-solid fa-crown ready"></i>' :
-            u.isReady ?
-            '<i class="fa-solid fa-circle-check ready"></i>' :
-            '<i class="fa-solid fa-circle not-ready"></i>';
-          return `<div class="user-row"><div>${icon} <span class="${
-              isMe ? "me" : ""
-            }">${u.name}</span></div>${
-              amIDealer() && !isMe
-                ? `<button class="btn btn-secondary sm" onclick="changeDealer('${u.id}')">GIAO CÁI</button>`
-                : ""
-            }</div>`;
-        })
-        .join("");
-    }
+      container.innerHTML = roomData.users.map(u => {
+        const isMe = u.id === socket.id;
+        const isDealer = u.id === roomData.dealer;
 
-    function toggleModal() {
-      if (modal.style.display === "flex") modal.style.display = "none";
-      else {
-        renderUserList();
-        modal.style.display = "flex";
-      }
-    }
+        let statusIcon = "";
+        if (isDealer) {
+          statusIcon =
+            `<span class="${u.isReady ? 'ready' : 'not-ready'}" title="Người cầm cái"><i class="fa-solid fa-crown"></i></span>`;
+        } else {
+          statusIcon = u.isReady ?
+            `<span class="ready" title="Đã sẵn sàng"><i class="fa-solid fa-circle-check"></i></span>` :
+            `<span class="not-ready" title="Đang chờ"><i class="fa-solid fa-circle"></i></span>`;
+        }
 
-    function switchTab(id) {
-      document
-        .querySelectorAll(".container")
-        .forEach((c) => c.classList.remove("active"));
-      document
-        .querySelectorAll(".tab-btn")
-        .forEach((b) => b.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      document
-        .getElementById(id === "draw-view" ? "tab-draw" : "tab-play")
-        .classList.add("active");
-    }
-
-    function showLoader() {
-      document.getElementById("loader-overlay").style.display = "flex";
-    }
-
-    function hideLoader() {
-      document.getElementById("loader-overlay").style.display = "none";
+        return `
+            <div class="user-row">
+              <div>
+                ${statusIcon}
+                <span class="${isMe ? 'me' : ''}">
+                  ${u.name} ${isMe ? '<small>(Bạn)</small>' : ''}
+                </span>
+              </div>
+              
+              ${amIDealer() && !isMe ? `
+                <button class="btn btn-secondary sm" onclick="changeDealer('${u.id}')">
+                  GIAO CÁI <i class="fa-solid fa-handshake"></i>
+                </button>
+              ` : ''}
+            </div>
+        `;
+      }).join("");
     }
 
     function changeDealer(id) {
-      if (confirm("Giao Cái?")) {
-        socket.emit("change_dealer", {
+      if (confirm("Giao quyền cầm Cái cho người này?")) {
+        socket.emit('change_dealer', {
           roomId: myRoomId,
-          targetUserId: id,
+          targetUserId: id
         });
         showLoader();
         toggleModal();
       }
     }
 
-    socket.on('game_reset', (data) => {
-      hideLoader();
-      roomData = data;
-      renderBauCua();
-      renderUserList();
-
-      alert("Ván mới đã bắt đầu, vui lòng chọn lại tờ dò và bấm sẵn sàng.");
-    });
-
-    socket.on('result', (data) => {
-      hideLoader();
-      roomData = data;
-      renderBauCua();
-      renderUserList();
-
-      alert("Ván mới đã bắt đầu, vui lòng chọn lại tờ dò và bấm sẵn sàng.");
-    });
-
-    function showResult(result) {
-      const title = document.getElementById("modal-title");
-      const content = document.getElementById("user-list-content");
-      title.innerText = "KẾT QUẢ";
-
-      let html = "";
-      Object.keys(result).forEach(userName => {
-        total += result[userName];
-        html += `
-            <div class="user-row">
-              <div><span class="${sId === socket.id ? "me" : ""}">${
-              userName
-            }</span></div>
-              <span class="amount">${formatMoney(
-                result[userName]
-              )}</span>
-            </div>`;
-      });
-      content.innerHTML =
-        `<div class="total">Tổng: ${formatMoney(
-              total
-            )}</div>` + html;
-      modal.style.display = "flex";
+    function switchTab(id) {
+        document.querySelectorAll(".container").forEach(c => c.classList.remove("active"));
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+        document.getElementById(id === "draw-view" ? "tab-draw" : "tab-play").classList.add("active");
     }
+
+    function showLoader() { document.getElementById("loader-overlay").style.display = "flex"; }
+    function hideLoader() { document.getElementById("loader-overlay").style.display = "none"; }
   </script>
 </body>
 
