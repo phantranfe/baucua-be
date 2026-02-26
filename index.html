@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Loto Master - Bầu Cua</title>
+  <title>Bầu Cua</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
@@ -486,7 +486,7 @@
 <body>
   <div id="login-screen" class="container active">
     <div class="header-section login-box">
-      <div class="title-large">Loto Master</div>
+      <div class="title-large">Bầu Cua Master</div>
       <input type="text" id="user-name" placeholder="Tên của bạn" class="input-custom" />
       <input type="text" id="room-id" placeholder="Mã phòng" class="input-custom" />
       <input type="password" id="room-pass" placeholder="Mật khẩu phòng" class="input-custom" />
@@ -557,13 +557,13 @@
   </div>
 
   <script>
-    const socket = io("https://loto-be.onrender.com");
+    const socket = io("https://baucua-be.onrender.com");
     let myName, myRoomId, roomData;
     let myBets = {}; // Lưu trữ cược cục bộ: { bau: 5000, cua: 10000 }
     let isDiceLocked = false;
     let isLocked = false;
     let isPressing = false;
-
+    let isAllReady = false;
     let startTime = 0;
     let shakeTimer = null;
     let rots = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
@@ -740,12 +740,16 @@
         showLoader();
     }
 
-    socket.on("update_ready_status", (data) => {
-        hideLoader();
-        if (roomData) roomData.users = data.users;
-        const me = data.users.find(u => u.id === socket.id);
-        isLocked = me ? me.isReady : false;
-        renderBauCua();
+    socket.on('update_ready_status', (data) => {
+      hideLoader();
+      isAllReady = data.allReady;
+      roomData.users = data.users;
+
+      renderUserList();
+
+      if (amIDealer()) {
+        drawBtn.disabled = !isAllReady;
+      }
     });
 
     socket.on("result", (data) => {
