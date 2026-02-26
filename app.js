@@ -83,8 +83,8 @@ io.on('connection', (socket) => {
             items.forEach(item => {
                 const roomItem = room.items.find(t => t.id === item.id);
                 if (roomItem) {
-                    if (!roomItem.users) roomItem.users = [];
-                        roomItem.users.push({
+                    if (!roomItem.allBets) roomItem.allBets = [];
+                        roomItem.allBets.push({
                             userName,
                             amount: item.amount
                         });
@@ -111,12 +111,12 @@ io.on('connection', (socket) => {
             const result = {};
 
             room.items.forEach(roomItem => {
-                roomItem.users.forEach(user => {
-                    if (!result[user.userName]) result[user.userName] = 0;
+                roomItem.allBets.forEach(bet => {
+                    if (!result[bet.userName]) result[bet.userName] = 0;
                     if (drawnItemIds.includes(roomItem.id)) {
-                        result[user.userName] += user.amount;
+                        result[bet.userName] += bet.amount;
                     } else {
-                        result[user.userName] -= user.amount;
+                        result[bet.userName] -= bet.amount;
                     }
                 });
             });
