@@ -149,9 +149,6 @@ io.on('connection', (socket) => {
 
     socket.on('change_dealer', ({ roomId, targetUserId }) => {
         const room = rooms[roomId];
-        if (room.drawnItems && room.drawnItems.length > 0) {
-            return socket.emit('error_msg', 'Hãy bấm chơi lại.');
-        }
         if (room && socket.id === room.dealer) {
             room.dealer = targetUserId;
             checkReadyStatus(roomId);
