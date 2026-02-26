@@ -88,9 +88,9 @@ io.on('connection', (socket) => {
                         userName,
                         amount: item.amount
                     });
-                    io.in(roomId).emit('update_items', room.items);
                 }
             });
+            io.in(roomId).emit('update_items', room.items);
         } else {
             socket.emit('error_msg', 'Không thể chơi lúc này.');
         }
