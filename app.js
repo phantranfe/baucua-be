@@ -18,11 +18,11 @@ const rooms = {};
 /**
  * Hàm kiểm tra trạng thái sẵn sàng của tất cả người chơi (trừ Dealer)
  */
+
 const checkReadyStatus = (roomId) => {
     const room = rooms[roomId];
     if (room) {
-        const players = room.users.filter(u => u.id !== room.dealer);
-        const allReady = players.length > 0 ? players.every(u => u.isReady) : true;
+        const allReady = room.users.length > 0 ? room.users.every(u => u.isReady) : true;
 
         io.to(roomId).emit('update_ready_status', {
             allReady: allReady,
@@ -77,20 +77,25 @@ io.on('connection', (socket) => {
         checkReadyStatus(roomId);
     });
 
-    socket.on('bet', ({ roomId, userName, items }) => {
+    socket.on('bet', ({ roomId, items }) => {
         const room = rooms[roomId];
         // Chỉ cho phép đặt cược khi chưa ra kết quả
         if (room && room.drawnItems.length === 0) {
+            const user = room.users.find(u => u.id === socket.id);
             items.forEach(betItem => {
                 const roomItem = room.items.find(t => t.id === betItem.id);
                 if (roomItem && betItem.amount > 0) {
                     if (!roomItem.allBets) roomItem.allBets = [];
                     roomItem.allBets.push({
-                        userName,
+                        userName: user.name,
                         amount: Number(betItem.amount)
                     });
                 }
             });
+            if (user && socket.id !== room.dealer) {
+                user.isReady = !user.isReady;
+                checkReadyStatus(roomId);
+            }
             io.in(roomId).emit('room_state', room);
         } else {
             socket.emit('error_msg', 'Không thể đặt cược lúc này.');
@@ -143,10 +148,8 @@ io.on('connection', (socket) => {
         const room = rooms[roomId];
         if (room && socket.id === room.dealer) {
             room.dealer = targetUserId;
-            // Reset sẵn sàng khi đổi cái
-            room.users.forEach(u => u.isReady = false);
-            io.in(roomId).emit('room_state', room);
             checkReadyStatus(roomId);
+            io.in(roomId).emit('room_state', room);
         }
     });
 
@@ -162,17 +165,6 @@ io.on('connection', (socket) => {
 
             io.in(roomId).emit('game_reset', room);
             checkReadyStatus(roomId);
-        }
-    });
-
-    socket.on('toggle_ready', (roomId) => {
-        const room = rooms[roomId];
-        if (room) {
-            const user = room.users.find(u => u.id === socket.id);
-            if (user && socket.id !== room.dealer) {
-                user.isReady = !user.isReady;
-                checkReadyStatus(roomId);
-            }
         }
     });
 
