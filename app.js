@@ -1,7 +1,11 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
-const { ITEMS } = require('./constants');
+const {
+    Server
+} = require('socket.io');
+const {
+    ITEMS
+} = require('./constants');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,9 +31,9 @@ const checkReadyStatus = (roomId) => {
 
         // 2. Kiểm tra: Nếu không có người chơi nào thì mặc định true, 
         // nếu có thì tất cả người chơi đó phải Ready.
-        const allReady = playersOnly.length > 0 
-            ? playersOnly.every(u => u.isReady) 
-            : false;
+        const allReady = playersOnly.length > 0 ?
+            playersOnly.every(u => u.isReady) :
+            false;
 
         io.to(roomId).emit('update_ready_status', {
             allReady: allReady,
@@ -41,7 +45,11 @@ const checkReadyStatus = (roomId) => {
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    socket.on('join_room', ({ roomId, userName, password }) => {
+    socket.on('join_room', ({
+        roomId,
+        userName,
+        password
+    }) => {
         if (!rooms[roomId]) {
             // Khởi tạo phòng mới với bản sao sâu (Deep Copy) của ITEMS
             rooms[roomId] = {
@@ -51,7 +59,10 @@ io.on('connection', (socket) => {
                 users: [],
                 drawnItems: [],
                 // Clone ITEMS để tránh thay đổi dữ liệu gốc trong constants.js
-                items: ITEMS.map(item => ({ ...item, allBets: [] }))
+                items: ITEMS.map(item => ({
+                    ...item,
+                    allBets: []
+                }))
             };
         } else {
             const room = rooms[roomId];
@@ -84,7 +95,10 @@ io.on('connection', (socket) => {
         checkReadyStatus(roomId);
     });
 
-    socket.on('bet', ({ roomId, items }) => {
+    socket.on('bet', ({
+        roomId,
+        items
+    }) => {
         const room = rooms[roomId];
         // Chỉ cho phép đặt cược khi chưa ra kết quả
         if (room && room.drawnItems.length === 0) {
@@ -109,7 +123,10 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('draw_items', ({ roomId, drawnItems }) => {
+    socket.on('draw_items', ({
+        roomId,
+        drawnItems
+    }) => {
         const room = rooms[roomId];
         if (!room || socket.id !== room.dealer) return;
         if (room.drawnItems && room.drawnItems.length > 0) {
@@ -137,7 +154,7 @@ io.on('connection', (socket) => {
 
             roomItem.allBets.forEach(bet => {
                 if (!result[bet.userName]) result[bet.userName] = 0;
-                
+
                 if (count > 0) {
                     // Thắng: Số tiền thắng = Tiền cược * số lần xuất hiện
                     result[bet.userName] += (bet.amount * count);
@@ -148,39 +165,42 @@ io.on('connection', (socket) => {
             });
         });
 
-        io.in(roomId).emit('result', { 
-            result, 
-            drawnItems: room.drawnItems 
+        io.in(roomId).emit('result', {
+            result,
+            drawnItems: room.drawnItems
         });
     });
 
-    socket.on('change_dealer', ({ roomId, targetUserId }) => {
+    socket.on('change_dealer', ({
+        roomId,
+        targetUserId
+    }) => {
         const room = rooms[roomId];
         const user = room.users.find((user) => user.id === targetUserId);
         if (room && socket.id === room.dealer && user && !user.isReady) {
-          room.dealer = targetUserId;
-          checkReadyStatus(roomId);
-          io.in(roomId).emit("room_state", room);
+            room.dealer = targetUserId;
+            checkReadyStatus(roomId);
+            io.in(roomId).emit("room_state", room);
         }
     });
 
-    function reset(roomId) {
-      const room = rooms[roomId];
-      if (room && socket.id === room.dealer) {
+    function reset(room, roomId) {
         // Reset toàn bộ trạng thái để sang ván mới
         room.drawnItems = [];
         room.users.forEach((u) => (u.isReady = false));
         room.items.forEach((item) => {
-          item.allBets = []; // Xóa hết cược cũ
+            item.allBets = []; // Xóa hết cược cũ
         });
 
         io.in(roomId).emit("game_reset", room);
         checkReadyStatus(roomId);
-      }
     }
 
     socket.on('reset_game', (roomId) => {
-        reset(roomId);
+        const room = rooms[roomId];
+        if (room && socket.id === room.dealer) {
+            reset(room, roomId);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -191,25 +211,25 @@ io.on('connection', (socket) => {
             const idx = room.users.findIndex(u => u.id === socket.id);
             if (idx !== -1) {
                 room.users.splice(idx, 1);
-                
+
                 // Nếu phòng trống thì xóa phòng
                 if (room.users.length === 0) {
                     delete rooms[roomId];
                 } else {
                     if (room.dealer === socket.id) {
-                        
+
                         // Nếu Dealer thoát, chuyển Dealer cho người tiếp theo
-                    const notReadyUser = room.users.find((user) => !user.isReady);
-                    if (notReadyUser) {
-                        room.dealer = notReadyUser.id;
-                        io.in(roomId).emit("room_state", room);
-                        checkReadyStatus(roomId);
-                    } else {
-                        room.dealer = room.users[0].id;
-                        reset(roomId);
+                        const notReadyUser = room.users.find((user) => !user.isReady);
+                        if (notReadyUser) {
+                            room.dealer = notReadyUser.id;
+                            io.in(roomId).emit("room_state", room);
+                            checkReadyStatus(roomId);
+                        } else {
+                            room.dealer = room.users[0].id;
+                            reset(room, roomId);
+                        }
                     }
-                    }
-                    
+
                 }
             }
         }
