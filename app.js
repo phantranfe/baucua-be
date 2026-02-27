@@ -184,7 +184,8 @@ io.on('connection', (socket) => {
         }
     });
 
-    function reset(room, roomId) {
+    function reset(roomId) {
+        const room = rooms[roomId];
         // Reset toàn bộ trạng thái để sang ván mới
         room.drawnItems = [];
         room.users.forEach((u) => (u.isReady = false));
@@ -200,7 +201,7 @@ io.on('connection', (socket) => {
     socket.on('reset_game', (roomId) => {
         const room = rooms[roomId];
         if (room && socket.id === room.dealer) {
-            reset(room, roomId);
+            reset(roomId);
         }
     });
 
@@ -227,7 +228,7 @@ io.on('connection', (socket) => {
                             checkReadyStatus(roomId);
                         } else {
                             room.dealer = room.users[0].id;
-                            reset(room, roomId);
+                            reset(roomId);
                         }
                     }
 
