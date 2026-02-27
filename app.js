@@ -195,6 +195,7 @@ io.on('connection', (socket) => {
 
         io.in(roomId).emit("game_reset", room);
         io.in(roomId).emit('room_state', room);
+        console.log(room);
         checkReadyStatus(roomId);
     }
 
