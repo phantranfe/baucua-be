@@ -122,13 +122,13 @@ io.on("connection", (socket) => {
       return socket.emit("error_msg", "Hãy bấm chơi lại.");
     }
 
-    const players = room.users.filter((u) => u.id !== room.dealer);
-    const allReady =
-      players.length > 0 ? players.every((u) => u.isReady) : true;
+    // const players = room.users.filter((u) => u.id !== room.dealer);
+    // const allReady =
+    //   players.length > 0 ? players.every((u) => u.isReady) : true;
 
-    if (!allReady) {
-      return socket.emit("error_msg", "Chưa đủ người sẵn sàng.");
-    }
+    // if (!allReady) {
+    //   return socket.emit("error_msg", "Chưa đủ người sẵn sàng.");
+    // }
 
     // Cập nhật kết quả vào phòng
     room.drawnItems = drawnItems;
