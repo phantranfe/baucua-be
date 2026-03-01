@@ -75,9 +75,9 @@ io.on('connection', (socket) => {
             if (nameExists) {
                 return socket.emit('join_error', 'Tên này đã có người sử dụng.');
             }
-            if (room.drawnItems && room.drawnItems.length > 0) {
-                return socket.emit('join_error', 'Phòng này đã bắt đầu chơi.');
-            }
+            // if (room.drawnItems && room.drawnItems.length > 0) {
+            //     return socket.emit('join_error', 'Phòng này đã bắt đầu chơi.');
+            // }
         }
 
         const room = rooms[roomId];
