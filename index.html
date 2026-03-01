@@ -1,867 +1,1093 @@
 <!DOCTYPE html>
 <html lang="vi">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bầu Cua</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
-    rel="stylesheet" />
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <style>
-    :root {
-      --primary: 255, 62, 62;
-      --secondary: 255, 193, 7;
-      --bg: #1a1a2e;
-      --dice-size: 6rem;
-      font-size: 100%;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
-
-    body {
-      font-family: "Nunito", sans-serif;
-      background: var(--bg);
-      color: white;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      max-width: 37.5rem;
-      margin: auto;
-    }
-
-    .nav-tabs {
-      display: none;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.4);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      backdrop-filter: blur(0.5rem);
-      border-bottom: 0.063rem solid rgba(255, 255, 255, 0.1);
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 1.2rem;
-      border: none;
-      background: none;
-      color: #fff;
-      font-weight: 800;
-      cursor: pointer;
-      text-transform: uppercase;
-      font-family: inherit;
-      transition: 0.3s;
-    }
-
-    .tab-btn.active {
-      color: rgb(var(--primary));
-      border-bottom: 0.25rem solid rgb(var(--primary));
-      background: rgba(var(--primary), 0.1);
-    }
-
-    .container {
-      width: 100%;
-      padding: 1.5rem;
-      display: none;
-    }
-
-    .container.active {
-      display: block;
-    }
-
-    .header-section {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 2rem;
-      border-radius: 2rem;
-      border: 0.125rem solid rgba(255, 255, 255, 0.1);
-      width: 100%;
-    }
-
-    .title-large {
-      font-size: 2rem;
-      font-weight: 900;
-      color: rgb(var(--primary));
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-    }
-
-    .title-medium {
-      font-size: 1.5rem;
-      font-weight: 900;
-      color: rgb(var(--primary));
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-    }
-
-    .btn {
-      font-family: "Nunito", sans-serif;
-      padding: 1rem 2.5rem;
-      font-size: 1.25rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 3rem;
-      cursor: pointer;
-      transition: 0.3s;
-      text-transform: uppercase;
-    }
-
-    .btn-primary {
-      background: rgb(var(--primary));
-      color: white;
-      box-shadow: 0 0.3125rem 0.9375rem rgba(var(--primary), 0.5);
-    }
-
-    .btn-primary.pressing {
-      transform: scale(0.95);
-      box-shadow: none;
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: #888;
-      border: 0.0625rem solid #444;
-      font-size: 0.9rem;
-    }
-
-    .btn.sm {
-      padding: 0.25rem 0.75rem;
-      font-size: 0.7rem;
-    }
-
-    .text-center {
-      text-align: center;
-    }
-
-    .btn-close-modal,
-    .btn-join-room {
-      width: 100%;
-      margin-top: 1.5rem;
-    }
-
-    #login-screen {
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .login-box {
-      margin: 0;
-    }
-
-    .input-custom {
-      width: 100%;
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: 1rem;
-      border: none;
-      background: #2a2a40;
-      color: white;
-      text-align: center;
-      font-family: inherit;
-      font-size: 1.1rem;
-    }
-
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .color-group {
-      background: rgba(255, 255, 255, 0.03);
-      padding: 0.7rem;
-      border-radius: 0.7rem;
-      border: 0.063rem solid rgba(255, 255, 255, 0.05);
-    }
-
-    .choice-row {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .card-option {
-      flex: 1;
-      border-radius: 1rem;
-      cursor: default;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 0.2rem solid transparent;
-      transition: 0.3s;
-      background: rgba(var(--opt-bg), 0.6);
-      padding: 0.75rem;
-    }
-
-    .card-option.selected {
-      border-color: white;
-      background: rgb(var(--opt-bg));
-    }
-
-    .card-option img {
-      width: 7rem;
-      height: 7rem;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.35);
-    }
-
-    .card-option span {
-      font-weight: 900;
-      font-size: 1rem;
-      color: white;
-      cursor: pointer;
-    }
-
-    .bet-count {
-      font-size: 0.65rem;
-      opacity: 0.8;
-      margin: 0.5rem 0;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 0.25rem 0.5rem;
-      border-radius: 1.5rem;
-      cursor: pointer;
-    }
-
-    .bet-input-wrapper {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 0.5rem;
-      padding: 0.5rem;
-      display: flex;
-      gap: 0.5rem;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .input-bet {
-      width: 100%;
-      background: transparent;
-      border: none;
-      color: white;
-      text-align: center;
-      font-weight: 900;
-      font-size: 1.1rem;
-      font-family: inherit;
-      outline: none;
-    }
-
-    .input-bet::placeholder {
-      color: white;
-      opacity: 0.7;
-    }
-
-    .quick-adj-wrapper {
-      display: flex;
-      gap: 0.5rem;
-      width: 100%;
-    }
-
-    .btn-adj {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      color: white;
-      border-radius: 0.25rem;
-      font-size: 0.65rem;
-      font-weight: 800;
-      padding: 0.25rem;
-      cursor: pointer;
-    }
-
-    .btn-adj:active {
-      background: rgba(255, 255, 255, 0.4);
-    }
-
-    .card-option.is-locked {
-      pointer-events: none;
-      opacity: 0.7;
-    }
-
-    .user-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 0;
-      border-bottom: 0.063rem solid rgba(255, 255, 255, 0.05);
-    }
-
-    .user-row .me {
-      color: rgb(var(--primary));
-      font-weight: bold;
-    }
-
-    .user-row .ready {
-      color: rgb(0, 255, 26);
-    }
-
-    .user-row .not-ready {
-      color: rgb(255, 145, 0);
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      padding: 1.5rem;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(0.5rem);
-    }
-
-    .modal-content {
-      background: #2a2a40;
-      padding: 2rem;
-      border-radius: 2rem;
-      width: 100%;
-      max-width: 37.5rem;
-      max-height: 80vh;
-      overflow-y: auto;
-      border: 0.125rem solid rgba(255, 255, 255, 0.1);
-    }
-
-    #user-list-btn {
-      position: fixed;
-      bottom: 1.25rem;
-      right: 1.25rem;
-      width: 3.75rem;
-      height: 3.75rem;
-      background: rgb(var(--primary));
-      border-radius: 50%;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 1001;
-      font-size: 1.5rem;
-    }
-
-    .dice-board {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2rem;
-      margin-bottom: 4rem;
-    }
-
-    .dice-row {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-    }
-
-    .scene {
-      width: var(--dice-size);
-      height: var(--dice-size);
-      perspective: 30rem;
-    }
-
-    .dice {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      transform-style: preserve-3d;
-      transform: translateZ(-2.5rem);
-    }
-
-    .dice.stopping {
-      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.1);
-    }
-
-    .side-wrapper {
-      position: absolute;
-      width: var(--dice-size);
-      height: var(--dice-size);
-      background: #fff;
-      border: 0.1rem solid #ccc;
-      border-radius: 0.6rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backface-visibility: hidden;
-      font-size: 3rem;
-    }
-
-    .side-wrapper img {
-      width: 100%;
-      height: 100%;
-    }
-
-    .s0 {
-      transform: rotateY(0deg) translateZ(2.5rem);
-    }
-
-    .s1 {
-      transform: rotateY(-90deg) translateZ(2.5rem);
-    }
-
-    .s2 {
-      transform: rotateX(90deg) translateZ(2.5rem);
-    }
-
-    .s3 {
-      transform: rotateY(90deg) translateZ(2.5rem);
-    }
-
-    .s4 {
-      transform: rotateX(-90deg) translateZ(2.5rem);
-    }
-
-    .s5 {
-      transform: rotateY(180deg) translateZ(2.5rem);
-    }
-
-    #loader-overlay {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(0.5rem);
-    }
-
-    .loader {
-      width: 2.5rem;
-      aspect-ratio: 1;
-      color: rgb(var(--primary));
-      position: relative;
-      background: radial-gradient(0.625rem, currentColor 94%, #0000);
-    }
-
-    .loader:before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: radial-gradient(0.563rem at bottom right,
-          #0000 94%,
-          currentColor) top left,
-        radial-gradient(0.563rem at bottom left, #0000 94%, currentColor) top right,
-        radial-gradient(0.563rem at top right, #0000 94%, currentColor) bottom left,
-        radial-gradient(0.563rem at top left, #0000 94%, currentColor) bottom right;
-      background-size: 1.25rem 1.25rem;
-      background-repeat: no-repeat;
-      animation: loader 1.5s infinite cubic-bezier(0.3, 1, 0, 1);
-    }
-
-    @keyframes loader {
-      33% {
-        inset: -0.625rem;
-        transform: rotate(0deg);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bầu Cua Master</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary: 255, 62, 62;
+        --secondary: 255, 193, 7;
+        --bg: #1a1a2e;
+        --dice-size: 6rem;
+        font-size: 100%;
       }
 
-      66% {
-        inset: -0.625rem;
-        transform: rotate(90deg);
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
 
-      100% {
+      body {
+        font-family: "Nunito", sans-serif;
+        background: var(--bg);
+        color: white;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        max-width: 37.5rem;
+        margin: auto;
+      }
+
+      .nav-tabs {
+        display: none;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        backdrop-filter: blur(0.5rem);
+        border-bottom: 0.063rem solid rgba(255, 255, 255, 0.1);
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 1.2rem;
+        border: none;
+        background: none;
+        color: #fff;
+        font-weight: 800;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-family: inherit;
+        transition: 0.3s;
+      }
+
+      .tab-btn.active {
+        color: rgb(var(--primary));
+        border-bottom: 0.25rem solid rgb(var(--primary));
+        background: rgba(var(--primary), 0.1);
+      }
+
+      .container {
+        width: 100%;
+        padding: 1.5rem;
+        display: none;
+      }
+
+      .container.active {
+        display: block;
+      }
+
+      .header-section {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2rem;
+        border-radius: 2rem;
+        border: 0.125rem solid rgba(255, 255, 255, 0.1);
+        width: 100%;
+      }
+
+      .title-large {
+        font-size: 2rem;
+        font-weight: 900;
+        color: rgb(var(--primary));
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+      }
+
+      .title-medium {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: rgb(var(--primary));
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+      }
+
+      .btn {
+        font-family: "Nunito", sans-serif;
+        padding: 1rem 2.5rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border: none;
+        border-radius: 3rem;
+        cursor: pointer;
+        transition: 0.3s;
+        text-transform: uppercase;
+      }
+
+      *:disabled {
+        cursor: not-allowed !important;
+        opacity: 0.5;
+      }
+
+      .btn-primary {
+        background: rgb(var(--primary));
+        color: white;
+        box-shadow: 0 0.3125rem 0.9375rem rgba(var(--primary), 0.5);
+      }
+
+      .btn-primary.pressing {
+        transform: scale(0.95);
+        box-shadow: none;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: #888;
+        border: 0.0625rem solid #444;
+        font-size: 0.9rem;
+      }
+
+      .btn.sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.7rem;
+      }
+
+      .text-center {
+        text-align: center;
+      }
+
+      .actions {
+        display: grid;
+        justify-items: center;
+        row-gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .btn-close-modal,
+      .btn-join-room {
+        width: 100%;
+        margin-top: 1.5rem;
+      }
+
+      #login-screen {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-box {
+        margin: 0;
+      }
+
+      .input-custom {
+        width: 100%;
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 1rem;
+        border: none;
+        background: #2a2a40;
+        color: white;
+        text-align: center;
+        font-family: inherit;
+        font-size: 1.1rem;
+      }
+
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .color-group {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.7rem;
+        border-radius: 0.7rem;
+        border: 0.063rem solid rgba(255, 255, 255, 0.05);
+      }
+
+      .choice-row {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .card-option {
+        flex: 1;
+        border-radius: 1rem;
+        cursor: default;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 0.2rem solid transparent;
+        transition: 0.3s;
+        background: rgba(var(--opt-bg), 0.6);
+        padding: 0.75rem;
+      }
+
+      .card-option.selected {
+        border-color: white;
+        background: rgb(var(--opt-bg));
+      }
+
+      .card-option img {
+        width: 7rem;
+        height: 7rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      .card-option span {
+        font-weight: 900;
+        font-size: 1rem;
+        color: white;
+        cursor: pointer;
+      }
+
+      .bet-count {
+        font-size: 0.65rem;
+        opacity: 0.8;
+        margin: 0.5rem 0;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.25rem 0.5rem;
+        border-radius: 1.5rem;
+        cursor: pointer;
+      }
+
+      .bet-input-wrapper {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .input-bet {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: white;
+        text-align: center;
+        font-weight: 900;
+        font-size: 1.1rem;
+        font-family: inherit;
+        outline: none;
+      }
+
+      .input-bet::placeholder {
+        color: white;
+        opacity: 0.7;
+      }
+
+      .quick-adj-wrapper {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .btn-adj {
+        font-family: "Nunito", sans-serif;
+        flex: 1;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        border-radius: 0.25rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.25rem;
+        cursor: pointer;
+      }
+
+      .btn-adj:not(:disabled):active {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      .user-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 0.063rem solid rgba(255, 255, 255, 0.05);
+      }
+
+      .user-row > div {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .user-row .me {
+        color: rgb(var(--primary));
+        font-weight: bold;
+      }
+
+      .user-row .ready {
+        color: rgb(0, 255, 26);
+      }
+
+      .user-row .not-ready {
+        color: rgb(255, 145, 0);
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
         inset: 0;
-        transform: rotate(90deg);
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(0.5rem);
       }
-    }
-  </style>
-</head>
 
-<body>
-  <div id="login-screen" class="container active">
-    <div class="header-section login-box">
-      <div class="title-large">Bầu Cua Master</div>
-      <input type="text" id="user-name" placeholder="Tên của bạn" class="input-custom" />
-      <input type="text" id="room-id" placeholder="Mã phòng" class="input-custom" />
-      <input type="password" id="room-pass" placeholder="Mật khẩu phòng" class="input-custom" />
-      <button class="btn btn-primary btn-join-room" onclick="joinGame()">
-        VÀO PHÒNG
-      </button>
+      .modal-content {
+        background: #2a2a40;
+        padding: 2rem;
+        border-radius: 2rem;
+        width: 100%;
+        max-width: 37.5rem;
+        max-height: 80vh;
+        overflow-y: auto;
+        border: 0.125rem solid rgba(255, 255, 255, 0.1);
+      }
+
+      .modal-content .total {
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .modal-content .amount.neg {
+        color: rgb(255, 145, 0);
+      }
+
+      .modal-content .amount.pos {
+        color: rgb(0, 255, 26);
+      }
+
+      #user-list-btn {
+        position: fixed;
+        bottom: 1.25rem;
+        right: 1.25rem;
+        width: 3.75rem;
+        height: 3.75rem;
+        background: rgb(var(--primary));
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 1001;
+        font-size: 1.5rem;
+      }
+
+      .dice-board {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 4rem;
+      }
+
+      .dice-row {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+      }
+
+      .scene {
+        width: var(--dice-size);
+        height: var(--dice-size);
+        perspective: 30rem;
+      }
+
+      .dice {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transform: translateZ(-2.5rem);
+      }
+
+      .dice.stopping {
+        transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+      }
+
+      .side-wrapper {
+        position: absolute;
+        width: var(--dice-size);
+        height: var(--dice-size);
+        background: #fff;
+        border: 0.1rem solid #ccc;
+        border-radius: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backface-visibility: hidden;
+        font-size: 3rem;
+      }
+
+      .side-wrapper img {
+        width: 100%;
+        height: 100%;
+      }
+
+      .s0 {
+        transform: rotateY(0deg) translateZ(2.5rem);
+      }
+
+      .s1 {
+        transform: rotateY(-90deg) translateZ(2.5rem);
+      }
+
+      .s2 {
+        transform: rotateX(90deg) translateZ(2.5rem);
+      }
+
+      .s3 {
+        transform: rotateY(90deg) translateZ(2.5rem);
+      }
+
+      .s4 {
+        transform: rotateX(-90deg) translateZ(2.5rem);
+      }
+
+      .s5 {
+        transform: rotateY(180deg) translateZ(2.5rem);
+      }
+
+      #loader-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(0.5rem);
+      }
+
+      .loader {
+        width: 2.5rem;
+        aspect-ratio: 1;
+        color: rgb(var(--primary));
+        position: relative;
+        background: radial-gradient(0.625rem, currentColor 94%, #0000);
+      }
+
+      .loader:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: radial-gradient(
+              0.563rem at bottom right,
+              #0000 94%,
+              currentColor
+            )
+            top left,
+          radial-gradient(0.563rem at bottom left, #0000 94%, currentColor) top
+            right,
+          radial-gradient(0.563rem at top right, #0000 94%, currentColor) bottom
+            left,
+          radial-gradient(0.563rem at top left, #0000 94%, currentColor) bottom
+            right;
+        background-size: 1.25rem 1.25rem;
+        background-repeat: no-repeat;
+        animation: loader 1.5s infinite cubic-bezier(0.3, 1, 0, 1);
+      }
+
+      @keyframes loader {
+        33% {
+          inset: -0.625rem;
+          transform: rotate(0deg);
+        }
+
+        66% {
+          inset: -0.625rem;
+          transform: rotate(90deg);
+        }
+
+        100% {
+          inset: 0;
+          transform: rotate(90deg);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="login-screen" class="container active">
+      <div class="header-section login-box">
+        <div class="title-large">Bầu Cua Master</div>
+        <input
+          type="text"
+          id="user-name"
+          placeholder="Tên của bạn"
+          class="input-custom"
+        />
+        <input
+          type="text"
+          id="room-id"
+          placeholder="Mã phòng"
+          class="input-custom"
+        />
+        <input
+          type="password"
+          id="room-pass"
+          placeholder="Mật khẩu phòng"
+          class="input-custom"
+        />
+        <button class="btn btn-primary btn-join-room" onclick="joinGame()">
+          VÀO PHÒNG
+        </button>
+      </div>
     </div>
-  </div>
 
-  <nav class="nav-tabs" id="main-nav">
-    <button class="tab-btn active" id="tab-draw" onclick="switchTab('draw-view')">
-      Quay số
-    </button>
-    <button class="tab-btn" id="tab-play" onclick="switchTab('play-view')">
-      Bầu Cua
-    </button>
-  </nav>
+    <nav class="nav-tabs" id="main-nav">
+      <button
+        class="tab-btn active"
+        id="tab-draw"
+        onclick="switchTab('draw-view')"
+      >
+        Lắc xí ngầu
+      </button>
+      <button class="tab-btn" id="tab-play" onclick="switchTab('play-view')">
+        Đặt cược
+      </button>
+    </nav>
 
-  <div id="draw-view" class="container">
-    <div class="header-section">
-      <div class="dice-board">
-        <div class="dice-row">
-          <div class="scene">
-            <div id="dice-0" class="dice"></div>
+    <div id="draw-view" class="container">
+      <div class="header-section">
+        <div class="dice-board">
+          <div class="dice-row">
+            <div class="scene">
+              <div id="dice-0" class="dice"></div>
+            </div>
+          </div>
+          <div class="dice-row">
+            <div class="scene">
+              <div id="dice-1" class="dice"></div>
+            </div>
+            <div class="scene">
+              <div id="dice-2" class="dice"></div>
+            </div>
           </div>
         </div>
-        <div class="dice-row">
-          <div class="scene">
-            <div id="dice-1" class="dice"></div>
-          </div>
-          <div class="scene">
-            <div id="dice-2" class="dice"></div>
-          </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="draw-btn" disabled>
+            LẮC XÍ NGẦU
+          </button>
+          <button class="btn btn-secondary" id="reset-btn">CHƠI LẠI</button>
+          <button
+            disabled
+            class="btn btn-secondary view-result-btn"
+            onclick="showResult();"
+          >
+            KẾT QUẢ
+          </button>
         </div>
       </div>
+    </div>
+
+    <div id="play-view" class="container">
+      <div class="color-grid" id="baucua-grid"></div>
       <div class="actions">
-        <button class="btn btn-primary" id="draw-btn" disabled>LẮC</button>
-        <button class="btn btn-secondary" id="reset-btn">CHƠI LẠI</button>
+        <button class="btn btn-primary" id="ready-btn" onclick="setReady()">
+          SẴN SÀNG
+        </button>
+        <button
+          disabled
+          class="btn btn-secondary view-result-btn"
+          onclick="showResult();"
+        >
+          KẾT QUẢ
+        </button>
       </div>
     </div>
-  </div>
 
-  <div id="play-view" class="container">
-    <div class="color-grid" id="baucua-grid"></div>
-    <div class="text-center">
-      <button class="btn btn-primary" id="ready-btn" onclick="setReady()">
-        SẴN SÀNG
-      </button>
+    <div id="user-list-btn" onclick="toggleModal()">
+      <i class="fa-solid fa-user-group"></i>
     </div>
-  </div>
 
-  <div id="user-list-btn" onclick="toggleModal()">
-    <i class="fa-solid fa-user-group"></i>
-  </div>
-
-  <div id="user-modal" class="modal" onclick="if(event.target==this) toggleModal()">
-    <div class="modal-content">
-      <div class="title-medium" id="modal-title"></div>
-      <div id="user-list-content"></div>
-      <button class="btn btn-secondary btn-close-modal" onclick="toggleModal()">
-        ĐÓNG
-      </button>
+    <div
+      id="modal"
+      class="modal"
+      onclick="if(event.target==this) toggleModal()"
+    >
+      <div class="modal-content">
+        <div class="title-medium" id="modal-title"></div>
+        <div id="modal-container"></div>
+        <button
+          class="btn btn-secondary btn-close-modal"
+          onclick="toggleModal()"
+        >
+          ĐÓNG
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div id="loader-overlay">
-    <div class="loader"></div>
-  </div>
+    <div id="loader-overlay">
+      <div class="loader"></div>
+    </div>
 
-  <script>
-    const socket = io("https://baucua-be.onrender.com");
-    let myName, myRoomId, roomData;
-    let myBets = {}; // Lưu trữ cược cục bộ: { bau: 5000, cua: 10000 }
-    let isDiceLocked = false;
-    let isLocked = false;
-    let isPressing = false;
-    let isAllReady = false;
-    let startTime = 0;
-    let shakeTimer = null;
-    let rots = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
-    
-    const drawBtn = document.getElementById("draw-btn");
-    const resetBtn = document.getElementById("reset-btn");
-    const dices = document.querySelectorAll(".dice");
-    const modal = document.getElementById("user-modal");
+    <script>
+      const socket = io("https://baucua-be.onrender.com");
+      let myName, myRoomId, roomData;
+      let myBets = {};
+      let isDiceLocked = false;
+      let isLocked = false;
+      let isPressing = false;
+      let isAllReady = false;
+      let startTime = 0;
+      let shakeTimer = null;
+      let rots = [
+        {
+          x: 0,
+          y: 0,
+        },
+        {
+          x: 0,
+          y: 0,
+        },
+        {
+          x: 0,
+          y: 0,
+        },
+      ];
 
-    const amIDealer = () => roomData && roomData.dealer === socket.id;
+      const drawBtn = document.getElementById("draw-btn");
+      const resetBtn = document.getElementById("reset-btn");
+      const viewResultBtns = document.querySelectorAll(".view-result-btn");
+      const readyBtn = document.getElementById("ready-btn");
+      const dices = document.querySelectorAll(".dice");
+      const modal = document.getElementById("modal");
 
-    function formatMoney(num) {
+      const amIDealer = () => roomData && roomData.dealer === socket.id;
+
+      function formatMoney(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
+      }
 
-    function joinGame() {
+      function joinGame() {
         myName = document.getElementById("user-name").value.trim();
-        myRoomId = document.getElementById("room-id").value.trim().toUpperCase();
+        myRoomId = document
+          .getElementById("room-id")
+          .value.trim()
+          .toUpperCase();
         const password = document.getElementById("room-pass").value;
 
-        if (!myName || !myRoomId) return alert("Nhập đủ thông tin.");
-        
-        showLoader();
-        socket.emit("join_room", { roomId: myRoomId, userName: myName, password });
-    }
+        if (!myName || !myRoomId) return alert("Vui lòng nhập đủ thông tin.");
 
-    // Nhận trạng thái phòng từ Server
-    socket.on("room_state", (data) => {
+        showLoader();
+        socket.emit("join_room", {
+          roomId: myRoomId,
+          userName: myName,
+          password,
+        });
+      }
+
+      socket.on("room_state", (data) => {
         hideLoader();
+        const isFirst = !roomData;
         roomData = data;
-        
-        // Khởi tạo giao diện Xúc xắc nếu là lần đầu
-        initDiceUI();
+
+        if (isFirst) {
+          initDiceUI();
+          if (amIDealer()) {
+            switchTab("draw-view");
+          }
+        }
+
+        if (!amIDealer()) {
+          switchTab("play-view");
+        }
 
         const me = data.users.find((u) => u.id === socket.id);
-        if (me) {
-            isLocked = me.isReady;
-            const readyBtn = document.getElementById("ready-btn");
-            readyBtn.innerText = isLocked ? "ĐÃ SẴN SÀNG" : "SẴN SÀNG";
-            readyBtn.disabled = isLocked;
+        if (me && !amIDealer()) {
+          isLocked = me.isReady || roomData.drawnItems.length > 0;
+          readyBtn.disabled = isLocked;
         }
 
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("main-nav").style.display = "flex";
         document.getElementById("user-list-btn").style.display = "flex";
-        // Chỉ hiển thị tab Quay số cho Dealer
-        document.getElementById("tab-draw").style.display = amIDealer() ? "block" : "none";
-        
+        document.getElementById("tab-draw").style.display = amIDealer()
+          ? "block"
+          : "none";
+        readyBtn.style.display = amIDealer() ? "none" : "block";
+        viewResultBtns.forEach((el) => (el.disabled = roomData.drawnItems.length === 0));
+
         renderBauCua();
-    });
+      });
 
-    function initDiceUI() {
+      function initDiceUI() {
         dices.forEach((dice) => {
-            if (dice.innerHTML !== "") return;
-            let html = "";
-            roomData.items.forEach((item, i) => {
-                // Giả định bạn có ảnh trong thư mục assets
-                const imgUrl = `./assets/${item.id}.png`;
-                html += `<div class="side-wrapper s${i}"><img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/100?text=${item.name}'"></div>`;
-            });
-            dice.innerHTML = html;
+          if (dice.innerHTML !== "") return;
+          let html = "";
+          roomData.items.forEach((item, i) => {
+            const imgUrl = `./assets/${item.id}.png`;
+            html += `<div class="side-wrapper s${i}"><img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/100?text=${item.name}'"></div>`;
+          });
+          dice.innerHTML = html;
         });
-    }
+      }
 
-    // Xử lý Quay số (Chỉ dành cho Dealer)
-    drawBtn.addEventListener("pointerdown", (e) => {
+      drawBtn.addEventListener("pointerdown", (e) => {
         if (!amIDealer() || isDiceLocked) return;
         handlePress(e);
-    });
-    drawBtn.addEventListener("pointerup", handleRelease);
+      });
+      drawBtn.addEventListener("pointerup", handleRelease);
 
-    function handlePress(e) {
+      function handlePress(e) {
+        if (drawBtn.disabled) return;
+        if (e) e.preventDefault();
+        drawBtn.setPointerCapture(e.pointerId);
         isPressing = true;
         isDiceLocked = true;
+        isLocked = true;
         startTime = Date.now();
         drawBtn.classList.add("pressing");
+        viewResultBtns.forEach((el) => (el.disabled = true));
         dices.forEach((d) => d.classList.remove("stopping"));
 
         shakeTimer = setInterval(() => {
-            rots.forEach((rot, i) => {
-                rot.x += Math.floor(Math.random() * 40) + 30;
-                rot.y += Math.floor(Math.random() * 40) + 30;
-                dices[i].style.transform = `translateZ(-2.5rem) rotateX(${rot.x}deg) rotateY(${rot.y}deg)`;
-            });
+          rots.forEach((rot, i) => {
+            rot.x += Math.floor(Math.random() * 40) + 30;
+            rot.y += Math.floor(Math.random() * 40) + 30;
+            dices[
+              i
+            ].style.transform = `translateZ(-2.5rem) rotateX(${rot.x}deg) rotateY(${rot.y}deg)`;
+          });
         }, 16);
-    }
+        renderBauCua();
+        readyBtn.disabled = true;
+      }
 
-    function handleRelease() {
-        if (!isPressing) return;
+      function handleRelease() {
+        if (!isPressing || drawBtn.disabled) return;
         isPressing = false;
         const elapsed = Date.now() - startTime;
         const wait = Math.max(0, 2000 - elapsed);
         setTimeout(stopRolling, wait);
-    }
+      }
 
-    function stopRolling() {
+      function stopRolling() {
         clearInterval(shakeTimer);
         drawBtn.classList.remove("pressing");
 
-        // Dealer quyết định kết quả
         const results = [];
         const drawnItems = [];
 
         dices.forEach((dice, i) => {
-            dice.classList.add("stopping");
-            const index = Math.floor(Math.random() * 6);
-            const item = roomData.items[index];
-            results.push(index);
-            drawnItems.push(item);
+          dice.classList.add("stopping");
+          const index = Math.floor(Math.random() * 6);
+          const item = roomData.items[index];
+          results.push(index);
+          drawnItems.push(item);
 
-            // Tính toán góc quay để mặt trúng hướng về người xem
-            // Lưu ý: Cần faceAngle chuẩn trong constants.js
-            const targetX = Math.ceil(rots[i].x / 360) * 360 + (item.faceAngle?.x || 0) + 360;
-            const targetY = Math.ceil(rots[i].y / 360) * 360 + (item.faceAngle?.y || 0) + 360;
+          const targetX =
+            Math.ceil(rots[i].x / 360) * 360 + (item.faceAngle?.x || 0) + 360;
+          const targetY =
+            Math.ceil(rots[i].y / 360) * 360 + (item.faceAngle?.y || 0) + 360;
 
-            dice.style.transform = `translateZ(-2.5rem) rotateX(${targetX}deg) rotateY(${targetY}deg)`;
-            rots[i] = { x: targetX, y: targetY };
+          dice.style.transform = `translateZ(-2.5rem) rotateX(${targetX}deg) rotateY(${targetY}deg)`;
+          rots[i] = {
+            x: targetX,
+            y: targetY,
+          };
         });
 
-        // Gửi kết quả lên server
-        socket.emit("draw_items", { roomId: myRoomId, drawnItems });
+        socket.emit("draw_items", {
+          roomId: myRoomId,
+          drawnItems,
+        });
         isDiceLocked = false;
-    }
+      }
 
-    function renderBauCua() {
+      function renderBauCua() {
         const container = document.getElementById("baucua-grid");
-        container.innerHTML = roomData.items.map(item => {
-            const myAmount = myBets[item.id] || 0;
+        container.innerHTML = roomData.items
+          .map((item) => {
+            const myAmount = formatMoney(myBets[item.id] || 0);
             const count = item.allBets ? item.allBets.length : 0;
             const imgUrl = `./assets/${item.id}.png`;
-            
+
             return `
-                <div class="card-option ${myAmount > 0 ? "selected" : ""} ${isLocked ? "is-locked" : ""}" style="--opt-bg: ${item.color}">
-                    <img src="${imgUrl}" onclick="showBetDetails('${item.id}')" onerror="this.src='https://via.placeholder.com/100?text=${item.name}'">
-                    <span onclick="showBetDetails('${item.id}')">${item.name}</span>
-                    <div class="bet-count" onclick="showBetDetails('${item.id}')">${count} người đặt</div>
-                    <div class="bet-input-wrapper">
-                        <input type="text" class="input-bet" value="${myAmount || ""}" placeholder="0" 
-                               ${isLocked ? "disabled" : ""} oninput="handleInputBet(this, '${item.id}')">
+                <div class="card-option ${
+                  myBets[item.id] > 0 || (amIDealer() && count > 0)
+                    ? "selected"
+                    : ""
+                }" style="--opt-bg: ${item.color}">
+                    <img src="${imgUrl}" onclick="showBetDetails('${
+              item.id
+            }')" onerror="this.src='https://via.placeholder.com/100?text=${
+              item.name
+            }'">
+                    <span onclick="showBetDetails('${item.id}')">${
+              item.name
+            }</span>
+                    <div class="bet-count" onclick="showBetDetails('${
+                      item.id
+                    }')">${count} người đặt</div>
+                    ${
+                      amIDealer()
+                        ? ""
+                        : `<div class="bet-input-wrapper">
+                        <input type="text" class="input-bet" value="${
+                          myAmount || ""
+                        }" placeholder="0" 
+                               ${
+                                 isLocked ? "disabled" : ""
+                               } oninput="handleInputBet(this, '${item.id}')">
                         <div class="quick-adj-wrapper">
-                            <button class="btn-adj" onclick="adjBet('${item.id}', -5000)">-5k</button>
-                            <button class="btn-adj" onclick="adjBet('${item.id}', 5000)">+5k</button>
+                            <button class="btn-adj" onclick="adjBet(this, '${
+                              item.id
+                            }', -5000)" ${
+                            isLocked ? "disabled" : ""
+                          }>-5.000</button>
+                            <button class="btn-adj" onclick="adjBet(this, '${
+                              item.id
+                            }', 5000)" ${
+                            isLocked ? "disabled" : ""
+                          }>+5.000</button>
                         </div>
-                    </div>
+                    </div>`
+                    }
                 </div>`;
-        }).join("");
-    }
+          })
+          .join("");
+      }
 
-    function handleInputBet(el, id) {
-        let val = parseInt(el.value.replace(/\D/g, "")) || 0;
-        myBets[id] = val;
-        el.value = val === 0 ? "" : formatMoney(val);
-        renderBauCua();
-    }
+      function handleInputBet(el, id) {
+        if (isLocked) return;
+        let rawVal = el.value.replace(/\D/g, "");
+        let numVal = parseInt(rawVal) || 0;
+        myBets[id] = numVal;
+        el.value = rawVal === "" ? "" : formatMoney(numVal);
+        updateCard(el, numVal);
+      }
 
-    function adjBet(id, amount) {
+      function adjBet(el, id, amount) {
         if (isLocked) return;
         myBets[id] = Math.max(0, (myBets[id] || 0) + amount);
-        renderBauCua();
-    }
+        const wrapper = el.closest(".bet-input-wrapper");
+        const input = wrapper.querySelector(".input-bet");
+        input.value = formatMoney(myBets[id] || 0);
+        updateCard(el, myBets[id]);
+      }
 
-    // Gửi lệnh Sẵn sàng & Danh sách cược lên Server
-    function setReady() {
+      function updateCard(el, numVal) {
+        const card = el.closest(".card-option");
+        if (numVal > 0) card.classList.add("selected");
+        else card.classList.remove("selected");
+      }
+
+      function setReady() {
         if (isLocked) return;
+        if (Object.keys(myBets).length === 0)
+          return alert("Hãy đặt cược bắt đầu chơi.");
         const betList = [];
         for (let id in myBets) {
-            if (myBets[id] > 0) betList.push({ id, amount: myBets[id] });
+          if (myBets[id] > 0)
+            betList.push({
+              id,
+              amount: myBets[id],
+            });
         }
 
-        // 1. Gửi cược trước
-        socket.emit("bet", { roomId: myRoomId, userName: myName, items: betList });
-        // 2. Gửi trạng thái sẵn sàng
-        socket.emit("toggle_ready", myRoomId);
+        socket.emit("bet", {
+          roomId: myRoomId,
+          userName: myName,
+          items: betList,
+        });
         showLoader();
-    }
-
-    socket.on('update_ready_status', (data) => {
-      hideLoader();
-      isAllReady = data.allReady;
-      roomData.users = data.users;
-
-      renderUserList();
-
-      if (amIDealer()) {
-        drawBtn.disabled = !isAllReady;
       }
-    });
 
-    socket.on("result", (data) => {
-        showResult(data.result);
-    });
+      socket.on("update_ready_status", (data) => {
+        hideLoader();
+        isAllReady = data.allReady;
+        roomData.users = data.users;
 
-    function showResult(result) {
+        renderUserList();
+
+        if (amIDealer()) {
+          drawBtn.disabled = !isAllReady;
+        }
+      });
+
+      socket.on("result", (data) => {
+        drawBtn.disabled = true;
+        roomData = data;
+        setTimeout(() => {
+          showResult();
+          viewResultBtns.forEach((el) => (el.disabled = false));
+        }, 1000);
+      });
+
+      function showResult() {
+        if (!roomData.result) return;
         const title = document.getElementById("modal-title");
-        const content = document.getElementById("user-list-content");
-        title.innerText = "KẾT QUẢ VÁN ĐẤU";
+        const content = document.getElementById("modal-container");
+        title.innerText = "KẾT QUẢ";
 
         let html = "";
-        for (let user in result) {
-            const val = result[user];
-            const color = val >= 0 ? "#00ff1a" : "#ff3e3e";
-            html += `
+        for (let user in roomData.result) {
+          const val = roomData.result[user];
+          const amountClassName = val >= 0 ? "pos" : "neg";
+          html += `
                 <div class="user-row">
                     <span class="${user === myName ? "me" : ""}">${user}</span>
-                    <span style="color: ${color}; font-weight: bold">${val > 0 ? "+" : ""}${formatMoney(val)}</span>
+                    <span class="amount ${amountClassName}">${
+            val > 0 ? "+" : ""
+          }${formatMoney(val)}</span>
                 </div>`;
         }
 
-        content.innerHTML = html;
+        content.innerHTML =
+          `<div class="total">${roomData.drawnItems
+            .map((item) => item.name)
+            .join(" - ")}</div>` + html;
         modal.style.display = "flex";
-    }
+      }
 
-    resetBtn.onclick = () => {
-      if (confirm("Chơi ván mới?")) {
-        socket.emit('reset_game', myRoomId);
-        showLoader();
+      resetBtn.onclick = () => {
+        if (confirm("Chơi ván mới?")) {
+          socket.emit("reset_game", myRoomId);
+          showLoader();
+        }
       };
-    };
 
-    socket.on("game_reset", (data) => {
-        roomData = data;
+      socket.on("game_reset", (data) => {
         myBets = {};
-        isLocked = false;
-        modal.style.display = "none";
-        renderBauCua();
-        alert("Bắt đầu ván mới!");
-    });
+        alert("Ván mới đã bắt đầu.");
+      });
 
-    socket.on("join_error", (msg) => { hideLoader(); alert(msg); });
-    socket.on("error_msg", (msg) => alert(msg));
+      socket.on("join_error", (msg) => {
+        hideLoader();
+        alert(msg);
+      });
 
-    function toggleModal() {
+      socket.on("error_msg", (msg) => {
+        hideLoader();
+        alert(msg);
+      });
+
+      function toggleModal() {
         if (modal.style.display === "flex") {
-            modal.style.display = "none";
+          modal.style.display = "none";
         } else {
-            renderUserList();
-            modal.style.display = "flex";
+          renderUserList();
+          modal.style.display = "flex";
         }
-    }
+      }
 
-    function renderUserList() {
-      const title = document.getElementById("modal-title");
-      const container = document.getElementById("user-list-content");
-      title.innerHTML = `[${roomData.id}]`;
-      container.innerHTML = roomData.users.map(u => {
-        const isMe = u.id === socket.id;
-        const isDealer = u.id === roomData.dealer;
+      function showBetDetails(id) {
+        const item = roomData.items.find((x) => x.id === id);
+        const title = document.getElementById("modal-title");
+        const content = document.getElementById("modal-container");
+        modal.dataset.viewingBet = id;
+        title.innerText = "Ô " + item.name;
 
-        let statusIcon = "";
-        if (isDealer) {
-          statusIcon =
-            `<span class="${u.isReady ? 'ready' : 'not-ready'}" title="Người cầm cái"><i class="fa-solid fa-crown"></i></span>`;
+        const bets = item.allBets || [];
+        if (bets.length === 0) {
+          content.innerHTML = "<p class='empty'>Chưa ai đặt</p>";
         } else {
-          statusIcon = u.isReady ?
-            `<span class="ready" title="Đã sẵn sàng"><i class="fa-solid fa-circle-check"></i></span>` :
-            `<span class="not-ready" title="Đang chờ"><i class="fa-solid fa-circle"></i></span>`;
+          let html = "";
+          let total = 0;
+          bets.forEach((bet) => {
+            total += bet.amount;
+            html += `
+      <div class="user-row">
+       <div><span class="${bet.userName === myName ? "me" : ""}">${
+              bet.userName
+            }</span></div>
+       <span class="amount">${formatMoney(bet.amount)}</span>
+      </div>`;
+          });
+          content.innerHTML =
+            `<div class="total">Tổng: ${formatMoney(total)}</div>` + html;
         }
+        modal.style.display = "flex";
+      }
 
-        return `
+      function renderUserList() {
+        const title = document.getElementById("modal-title");
+        const container = document.getElementById("modal-container");
+        title.innerHTML = `[${roomData.id}]`;
+        container.innerHTML = roomData.users
+          .map((u) => {
+            const isMe = u.id === socket.id;
+            const isDealer = u.id === roomData.dealer;
+
+            let statusIcon = "";
+            if (isDealer) {
+              statusIcon = `<span class="ready" title="Người cầm cái"><i class="fa-solid fa-crown"></i></span>`;
+            } else {
+              statusIcon = u.isReady
+                ? `<span class="ready" title="Đã sẵn sàng"><i class="fa-solid fa-circle-check"></i></span>`
+                : `<span class="not-ready" title="Đang chờ"><i class="fa-solid fa-circle"></i></span>`;
+            }
+
+            return `
             <div class="user-row">
               <div>
                 ${statusIcon}
-                <span class="${isMe ? 'me' : ''}">
-                  ${u.name} ${isMe ? '<small>(Bạn)</small>' : ''}
+                <span class="${isMe ? "me" : ""}">
+                  ${u.name} ${isMe ? "<small>(Bạn)</small>" : ""}
                 </span>
               </div>
               
-              ${amIDealer() && !isMe ? `
+              ${
+                amIDealer() && !isMe && !u.isReady
+                  ? `
                 <button class="btn btn-secondary sm" onclick="changeDealer('${u.id}')">
                   GIAO CÁI <i class="fa-solid fa-handshake"></i>
                 </button>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
         `;
-      }).join("");
-    }
-
-    function changeDealer(id) {
-      if (confirm("Giao quyền cầm Cái cho người này?")) {
-        socket.emit('change_dealer', {
-          roomId: myRoomId,
-          targetUserId: id
-        });
-        showLoader();
-        toggleModal();
+          })
+          .join("");
       }
-    }
 
-    function switchTab(id) {
-        document.querySelectorAll(".container").forEach(c => c.classList.remove("active"));
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      function changeDealer(id) {
+        if (confirm("Giao quyền cầm Cái cho người này?")) {
+          socket.emit("change_dealer", {
+            roomId: myRoomId,
+            targetUserId: id,
+          });
+          showLoader();
+          toggleModal();
+        }
+      }
+
+      function switchTab(id) {
+        document
+          .querySelectorAll(".container")
+          .forEach((c) => c.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
         document.getElementById(id).classList.add("active");
-        document.getElementById(id === "draw-view" ? "tab-draw" : "tab-play").classList.add("active");
-    }
+        document
+          .getElementById(id === "draw-view" ? "tab-draw" : "tab-play")
+          .classList.add("active");
+      }
 
-    function showLoader() { document.getElementById("loader-overlay").style.display = "flex"; }
-    function hideLoader() { document.getElementById("loader-overlay").style.display = "none"; }
-  </script>
-</body>
+      function showLoader() {
+        document.getElementById("loader-overlay").style.display = "flex";
+      }
 
+      function hideLoader() {
+        document.getElementById("loader-overlay").style.display = "none";
+      }
+    </script>
+  </body>
 </html>
