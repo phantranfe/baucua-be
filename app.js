@@ -143,7 +143,7 @@ io.on('connection', (socket) => {
         // Cập nhật kết quả vào phòng
         room.drawnItems = drawnItems;
         const drawnIds = drawnItems.map(item => item.id);
-        const result = {};
+        room.result = {};
 
         // Tính toán thắng thua
         room.items.forEach(roomItem => {
@@ -153,22 +153,19 @@ io.on('connection', (socket) => {
             const count = drawnIds.filter(id => id === roomItem.id).length;
 
             roomItem.allBets.forEach(bet => {
-                if (!result[bet.userName]) result[bet.userName] = 0;
+                if (!room.result[bet.userName]) room.result[bet.userName] = 0;
 
                 if (count > 0) {
                     // Thắng: Số tiền thắng = Tiền cược * số lần xuất hiện
-                    result[bet.userName] += (bet.amount * count);
+                    room.result[bet.userName] += (bet.amount * count);
                 } else {
                     // Thua: Trừ tiền cược
-                    result[bet.userName] -= bet.amount;
+                    room.result[bet.userName] -= bet.amount;
                 }
             });
         });
 
-        io.in(roomId).emit('result', {
-            result,
-            drawnItems: room.drawnItems
-        });
+        io.in(roomId).emit("result", room);
     });
 
     socket.on('change_dealer', ({
