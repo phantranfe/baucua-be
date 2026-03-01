@@ -24,14 +24,17 @@ const checkReadyStatus = (roomId) => {
   if (room) {
     // 1. Lấy danh sách những người chơi (trừ Dealer)
     const playersOnly = room.users.filter((u) => u.id !== room.dealer);
+    const readyPlayersOnly = playersOnly.filter((u) => u.isReady);
 
     // 2. Kiểm tra: Nếu không có người chơi nào thì mặc định true,
     // nếu có thì tất cả người chơi đó phải Ready.
     const allReady =
-      playersOnly.length > 0 ? playersOnly.every((u) => u.isReady) : false;
+      playersOnly.length > 0 && playersOnly.length === readyPlayersOnly.length;
+    const atLeastOnePlayerReady = readyPlayersOnly.length > 0;
 
     io.to(roomId).emit("update_ready_status", {
-      allReady: allReady,
+      allReady,
+      atLeastOnePlayerReady,
       users: room.users,
     });
   }
@@ -108,7 +111,7 @@ io.on("connection", (socket) => {
       }
       io.in(roomId).emit("room_state", room);
     } else {
-      socket.emit("error_msg", "Không thể đặt cược lúc này.");
+      socket.emit("error_msg", "Bạn không thể đặt cược ván này, hãy chờ ván sau.");
     }
   });
 
