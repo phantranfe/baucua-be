@@ -58,6 +58,7 @@ io.on('connection', (socket) => {
                 dealer: socket.id,
                 users: [],
                 drawnItems: [],
+                result: null,
                 // Clone ITEMS để tránh thay đổi dữ liệu gốc trong constants.js
                 items: ITEMS.map(item => ({
                     ...item,
@@ -185,6 +186,7 @@ io.on('connection', (socket) => {
         const room = rooms[roomId];
         // Reset toàn bộ trạng thái để sang ván mới
         room.drawnItems = [];
+        room.result = null;
         room.users.forEach((u) => (u.isReady = false));
         room.items.forEach((item) => {
             item.allBets = []; // Xóa hết cược cũ
